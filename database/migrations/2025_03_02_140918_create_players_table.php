@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('team_id')->constrained('teams')->onDelete('cascade');
             $table->string('name',100);
-            $table->string('sex',10);               // M ou F
+            $table->string('gender',10);            // M ou F
             $table->string('position',10);          // A (atacante) D (defesa) S (suplente)
             $table->timestamps();
         });
