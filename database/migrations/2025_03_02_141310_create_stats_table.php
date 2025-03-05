@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('player_id')->constrained('players')->onDelete('cascade');
             $table->foreignId('action_id')->constrained('actions')->onDelete('cascade');
             $table->boolean('success')->nullable();
+            $table->string('event_type', 50);       // A1.. D1..
             $table->timestamps();
         });
     }
