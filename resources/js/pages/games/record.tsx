@@ -1,5 +1,6 @@
 'use client';
 
+import Navbar from '@/components/navbar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -851,7 +852,9 @@ export default function RecordGame({ game }: RecordGameProps) {
     };
 
     return (
-        <AppLayout title="Record Game Statistics">
+        <>
+        <Navbar/>
+         <AppLayout breadcrumbs={[{ title: "Log Game", href: "/dashboard" }]}>
             <Head title="Record Game" />
 
             <div className="py-6">
@@ -944,9 +947,10 @@ export default function RecordGame({ game }: RecordGameProps) {
                                         <Card>
                                             <CardHeader>
                                                 <CardTitle>Korfball Field</CardTitle>
+                                                
                                             </CardHeader>
-                                            <Button variant="" onClick={switchHighlith}>
-                                                Change
+                                            <Button variant="default" onClick={switchHighlith} className="p-2 m-6">
+                                                Switch Position
                                             </Button>
                                             <CardContent>
                                                 <div className="relative aspect-[2/1] w-full overflow-hidden rounded-lg border-2 border-green-300 bg-green-100">
@@ -957,7 +961,7 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                     <div className="absolute top-0 left-0 flex h-full w-1/2 flex-col">
                                                         <div
                                                             className={`py-2 text-center font-semibold ${teamPosition === 'attack' ? 'bg-green-300' : 'bg-green-200'}`}
-                                                        >
+                                                            >
                                                             <div className="flex items-center justify-center gap-1">
                                                                 <Swords className="h-4 w-4" /> Attack
                                                             </div>
@@ -984,7 +988,7 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                                         { top: '70%', left: '20%' }, // Bottom-left
                                                                         { top: '70%', left: '60%' }, // Bottom-right
                                                                     ];
-
+                                                                    
                                                                     const isRecentlyChanged = recentlyChanged.includes(player.id);
 
                                                                     return (
@@ -996,14 +1000,14 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                                                 left: positions[index].left,
                                                                             }}
                                                                             onClick={() => handlePlayerClick(player)}
-                                                                        >
+                                                                            >
                                                                             <div
                                                                                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
                                                                                     player.gender === 'male' ? 'bg-blue-400' : 'bg-pink-400'
                                                                                 } font-bold text-white ${
                                                                                     isRecentlyChanged ? 'animate-pulse ring-4 ring-yellow-300' : ''
                                                                                 }`}
-                                                                            >
+                                                                                >
                                                                                 {player.number}
                                                                             </div>
                                                                             <div className="mt-1 rounded bg-white/80 px-1 text-center text-xs font-semibold">
@@ -1046,18 +1050,18 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                                         { top: '70%', left: '20%' }, // Bottom-left
                                                                         { top: '70%', left: '60%' }, // Bottom-right
                                                                     ];
-
+                                                                    
                                                                     const isRecentlyChanged = recentlyChanged.includes(player.id);
 
                                                                     return (
                                                                         <div
-                                                                            key={player.id}
-                                                                            className="absolute cursor-pointer"
-                                                                            style={{
-                                                                                top: positions[index].top,
-                                                                                left: positions[index].left,
-                                                                            }}
-                                                                            onClick={() => handlePlayerClick(player)}
+                                                                        key={player.id}
+                                                                        className="absolute cursor-pointer"
+                                                                        style={{
+                                                                            top: positions[index].top,
+                                                                            left: positions[index].left,
+                                                                        }}
+                                                                        onClick={() => handlePlayerClick(player)}
                                                                         >
                                                                             <div
                                                                                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
@@ -1065,7 +1069,7 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                                                 } font-bold text-white ${
                                                                                     isRecentlyChanged ? 'animate-pulse ring-4 ring-yellow-300' : ''
                                                                                 }`}
-                                                                            >
+                                                                                >
                                                                                 {player.number}
                                                                             </div>
                                                                             <div className="mt-1 rounded bg-white/80 px-1 text-center text-xs font-semibold">
@@ -1124,24 +1128,24 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                         <div className="space-y-4">
                                                             {events.map((event) => {
                                                                 const player = event.playerId
-                                                                    ? players.find((p) => p.id === event.playerId)
-                                                                    : undefined;
+                                                                ? players.find((p) => p.id === event.playerId)
+                                                                : undefined;
                                                                 const isAttackEvent = player && player.position === 'attack';
-
+                                                                
                                                                 return (
                                                                     <div
-                                                                        key={event.id}
-                                                                        className={`flex items-start gap-3 rounded-lg border p-3 ${
-                                                                            isAttackEvent
-                                                                                ? 'border-l-4 border-l-green-500'
+                                                                    key={event.id}
+                                                                    className={`flex items-start gap-3 rounded-lg border p-3 ${
+                                                                        isAttackEvent
+                                                                        ? 'border-l-4 border-l-green-500'
                                                                                 : player
-                                                                                  ? 'border-l-4 border-l-blue-500'
-                                                                                  : ''
+                                                                                ? 'border-l-4 border-l-blue-500'
+                                                                                : ''
                                                                         }`}
                                                                     >
                                                                         <div
                                                                             className={`rounded-full p-2 ${getEventColor(event.type, event.success)}`}
-                                                                        >
+                                                                            >
                                                                             {getEventIcon(event.type)}
                                                                         </div>
                                                                         <div className="flex-1">
@@ -1152,37 +1156,37 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                                                 </Badge>
                                                                                 {isAttackEvent && (
                                                                                     <Badge
-                                                                                        variant="outline"
-                                                                                        className="flex items-center gap-1 bg-green-50"
+                                                                                    variant="outline"
+                                                                                    className="flex items-center gap-1 bg-green-50"
                                                                                     >
                                                                                         <Swords className="h-3 w-3" /> Attack
                                                                                     </Badge>
                                                                                 )}
                                                                                 {player && !isAttackEvent && (
                                                                                     <Badge
-                                                                                        variant="outline"
-                                                                                        className="flex items-center gap-1 bg-blue-50"
+                                                                                    variant="outline"
+                                                                                    className="flex items-center gap-1 bg-blue-50"
                                                                                     >
                                                                                         <Shield className="h-3 w-3" /> Defense
                                                                                     </Badge>
                                                                                 )}
                                                                                 {event.success !== undefined && (
                                                                                     <Badge
-                                                                                        variant={event.success ? 'success' : 'destructive'}
+                                                                                    variant={event.success ? 'success' : 'destructive'}
                                                                                         className="ml-auto"
-                                                                                    >
+                                                                                        >
                                                                                         {event.success ? 'Success' : 'Failed'}
                                                                                     </Badge>
                                                                                 )}
                                                                                 {event.type === 'goal' && (
                                                                                     <Button
-                                                                                        variant="ghost"
-                                                                                        size="sm"
-                                                                                        className="ml-auto"
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            setSelectedGoalEvent(event);
-                                                                                        }}
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    className="ml-auto"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setSelectedGoalEvent(event);
+                                                                                    }}
                                                                                     >
                                                                                         View Sequence
                                                                                     </Button>
@@ -1390,8 +1394,8 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                                                                 player.gender === 'male'
                                                                                                     ? 'bg-blue-100'
                                                                                                     : 'bg-pink-100'
-                                                                                            }
-                                                                                        >
+                                                                                                }
+                                                                                                >
                                                                                             {player.name
                                                                                                 .split(' ')
                                                                                                 .map((n) => n[0])
@@ -1479,13 +1483,13 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                 {players.map((player) => {
                                                     const stats = getPlayerStats(player.id);
                                                     const isActive = getActivePlayers().some((p) => p.id === player.id);
-
+                                                    
                                                     return (
                                                         <div
-                                                            key={player.id}
-                                                            className={`flex items-center gap-3 rounded-lg border p-2 ${
-                                                                isActive ? (player.position === 'attack' ? 'bg-green-50' : 'bg-blue-50') : ''
-                                                            }`}
+                                                        key={player.id}
+                                                        className={`flex items-center gap-3 rounded-lg border p-2 ${
+                                                            isActive ? (player.position === 'attack' ? 'bg-green-50' : 'bg-blue-50') : ''
+                                                        }`}
                                                         >
                                                             <Avatar>
                                                                 <AvatarFallback className={player.gender === 'male' ? 'bg-blue-100' : 'bg-pink-100'}>
@@ -1576,7 +1580,7 @@ export default function RecordGame({ game }: RecordGameProps) {
                                             <Select
                                                 value={selectedPlayerId?.toString() || ''}
                                                 onValueChange={(value) => setSelectedPlayerId(value ? Number.parseInt(value) : undefined)}
-                                            >
+                                                >
                                                 <SelectTrigger id="player">
                                                     <SelectValue placeholder="Select player" />
                                                 </SelectTrigger>
@@ -1594,18 +1598,18 @@ export default function RecordGame({ game }: RecordGameProps) {
                                     {(selectedEventType === 'assist' ||
                                         selectedEventType === 'substitution' ||
                                         selectedEventType === 'position_switch') && (
-                                        <div className="grid gap-2">
+                                            <div className="grid gap-2">
                                             <Label htmlFor="player-secondary">
                                                 {selectedEventType === 'assist'
                                                     ? 'Scorer'
                                                     : selectedEventType === 'substitution'
-                                                      ? 'Player Coming Off'
-                                                      : 'Player to Switch With'}
+                                                    ? 'Player Coming Off'
+                                                    : 'Player to Switch With'}
                                             </Label>
                                             <Select
                                                 value={selectedPlayerIdSecondary?.toString() || ''}
                                                 onValueChange={(value) => setSelectedPlayerIdSecondary(value ? Number.parseInt(value) : undefined)}
-                                            >
+                                                >
                                                 <SelectTrigger id="player-secondary">
                                                     <SelectValue placeholder="Select player" />
                                                 </SelectTrigger>
@@ -1642,7 +1646,7 @@ export default function RecordGame({ game }: RecordGameProps) {
                                                     size="sm"
                                                     onClick={() => setEventSuccess(false)}
                                                     className={eventSuccess === false ? 'bg-red-500 hover:bg-red-600' : ''}
-                                                >
+                                                    >
                                                     Failure
                                                 </Button>
                                             </div>
@@ -1656,7 +1660,7 @@ export default function RecordGame({ game }: RecordGameProps) {
                                             placeholder="Enter event description"
                                             value={eventDescription}
                                             onChange={(e) => setEventDescription(e.target.value)}
-                                        />
+                                            />
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-2">
@@ -1697,14 +1701,14 @@ export default function RecordGame({ game }: RecordGameProps) {
 
                                                 return (
                                                     <div
-                                                        key={event.id}
-                                                        className={`flex items-start gap-3 rounded-lg border p-2 ${
-                                                            isAttackEvent
-                                                                ? 'border-l-4 border-l-green-500'
-                                                                : player
-                                                                  ? 'border-l-4 border-l-blue-500'
-                                                                  : ''
-                                                        }`}
+                                                    key={event.id}
+                                                    className={`flex items-start gap-3 rounded-lg border p-2 ${
+                                                        isAttackEvent
+                                                        ? 'border-l-4 border-l-green-500'
+                                                        : player
+                                                        ? 'border-l-4 border-l-blue-500'
+                                                        : ''
+                                                    }`}
                                                     >
                                                         <div className={`rounded-full p-1.5 ${getEventColor(event.type, event.success)}`}>
                                                             {getEventIcon(event.type)}
@@ -1751,6 +1755,7 @@ export default function RecordGame({ game }: RecordGameProps) {
                 </div>
             </div>
         </AppLayout>
+</>
     );
 }
 
@@ -1759,17 +1764,17 @@ const getFullShotTypeName = (type: string) => {
     switch (type) {
         case 'LC':
             return 'Short Range';
-        case 'LM':
-            return 'Medium Range';
-        case 'LL':
-            return 'Long Range';
-        case 'P':
-            return 'Layup';
-        case 'L':
-            return 'Free Throw';
-        case 'Pe':
-            return 'Penalty';
-        default:
-            return type;
-    }
+            case 'LM':
+                return 'Medium Range';
+                case 'LL':
+                    return 'Long Range';
+                    case 'P':
+                        return 'Layup';
+                        case 'L':
+                            return 'Free Throw';
+                            case 'Pe':
+                                return 'Penalty';
+                                default:
+                                    return type;
+                                }
 };

@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { PlusCircle, Edit, Trash2, MoreHorizontal, Users } from "lucide-react"
 
 interface Team {
   id: number
@@ -40,7 +40,7 @@ interface PlayersCardProps {
   teams?: Team[]
 }
 
-export default function PlayersCard({ players = [], teams = [] }: PlayersCardProps) {
+export default function PlayersCard({ players, teams }: PlayersCardProps) {
   const [isAddPlayerOpen, setIsAddPlayerOpen] = useState(false)
   const [isEditPlayerOpen, setIsEditPlayerOpen] = useState(false)
   const [isDeletePlayerOpen, setIsDeletePlayerOpen] = useState(false)
@@ -58,14 +58,15 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
       "/players",
       {
         ...formData,
-        number: Number.parseInt(formData.number),
-        team_id: Number.parseInt(formData.team_id),
+        number: Number.parseInt(formData.number) || 0,
+        team_id: Number.parseInt(formData.team_id) || 0,
       },
       {
         onSuccess: () => {
           setIsAddPlayerOpen(false)
           resetForm()
         },
+        preserveScroll: true,
       },
     )
   }
@@ -77,14 +78,15 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
       `/players/${selectedPlayer.id}`,
       {
         ...formData,
-        number: Number.parseInt(formData.number),
-        team_id: Number.parseInt(formData.team_id),
+        number: Number.parseInt(formData.number) || 0,
+        team_id: Number.parseInt(formData.team_id) || 0,
       },
       {
         onSuccess: () => {
           setIsEditPlayerOpen(false)
           setSelectedPlayer(null)
         },
+        preserveScroll: true,
       },
     )
   }
@@ -97,6 +99,7 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
         setIsDeletePlayerOpen(false)
         setSelectedPlayer(null)
       },
+      preserveScroll: true,
     })
   }
 
@@ -153,16 +156,19 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
 
   return (
     <>
-      <Card className="border-0 shadow-none h-full">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-xl">Players</CardTitle>
+      <Card className="border shadow-sm h-[500px]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gray-50 border-b">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Users className="h-5 w-5 text-gray-500" />
+            Players
+          </CardTitle>
           <Button size="sm" onClick={() => setIsAddPlayerOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Player
           </Button>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[220px] pr-4">
+        <CardContent className="p-4">
+          <ScrollArea className="h-[400px] pr-4">
             {players.length === 0 ? (
               <div className="flex h-full items-center justify-center">
                 <p className="text-sm text-muted-foreground">No players added yet</p>
@@ -170,9 +176,16 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
             ) : (
               <div className="space-y-2">
                 {players.map((player) => (
-                  <div key={player.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div
+                    key={player.id}
+                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
+                  >
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted font-semibold">
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold ${
+                          player.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"
+                        }`}
+                      >
                         {player.number}
                       </div>
                       <div>
