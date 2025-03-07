@@ -9,9 +9,16 @@ use Illuminate\Support\Facades\Storage;
 
 class TeamController extends Controller
 {
+    public function dashboard()
+    {
+        $teams = $this->show();
+        return Inertia::render('dashboard', ['teams' => $teams]);
+    }
+
     public function show()
     {
-        return Inertia::render('xx', ['team' => Team::all()]);
+        $teams = Team::all();
+        return $teams;
     }
 
     public function findById($id)
@@ -36,13 +43,13 @@ class TeamController extends Controller
             'photo' => $photo
         ]);
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('dashboard')->with('message', 'OK');
     }
 
     public function update(Request $request, $id)
     {
         $team = Team::findOrFail($id);
-
+        // dd($team);
         $request->validate([
             'name' => 'required|string|min:1|max:255',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg'
@@ -60,7 +67,7 @@ class TeamController extends Controller
 
         $team->save();
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('dashboard')->with('message', 'OK');
     }
 
     public function delete($id)
@@ -72,6 +79,6 @@ class TeamController extends Controller
 
         $team->delete();
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('dashboard')->with('message', 'Deleted');
     }
 }

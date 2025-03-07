@@ -20,9 +20,10 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    // Route::get('/dashboard', function () {
+    //     return Inertia::render('dashboard');
+    // })->name('dashboard');
+    Route::get('/dashboard', [TeamController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/games/create', function () {
         return Inertia::render('games/create');
@@ -45,11 +46,12 @@ Route::get('/games/record', function () {
 |--------------------------------------------------------------------------
 */
 
+// Route::get('/dashboard', [TeamController::class, 'show'])->name('teams.show');
+
 Route::prefix('teams')->controller(TeamController::class)->group(function () {
-    Route::get('/', 'show')->name('teams.show');
+    Route::put('/{id}', 'update')->name('teams.update');
     Route::get('/{id}', 'findById')->name('teams.showid');
     Route::post('/', 'store')->name('teams.store');
-    Route::put('/{id}', 'update')->name('teams.update');
     Route::delete('/{id}', 'delete')->name('teams.delete');
 });
 
@@ -88,4 +90,3 @@ Route::prefix('stats')->controller(StatController::class)->group(function () {
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
-
