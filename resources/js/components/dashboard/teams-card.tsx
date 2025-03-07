@@ -3,12 +3,12 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -19,73 +19,72 @@ import { Edit, MoreHorizontal, PlusCircle, Trash2, Users } from "lucide-react"
 import { useState } from "react"
 
 interface Team {
-  id: number
-  name: string
-  logo?: string
-  created_at: string
-  players_count: number
-  games_count: number
+    id: number
+    name: string
+    logo?: string
+    created_at: string
+    players_count: number
+    games_count: number
 }
 
 interface TeamsCardProps {
-  teams?: Team[]
+    teams?: Team[]
 }
 
 export default function TeamsCard({ teams = [] }: TeamsCardProps) {
-  const [isAddTeamOpen, setIsAddTeamOpen] = useState(false)
-  const [isEditTeamOpen, setIsEditTeamOpen] = useState(false)
-  const [isDeleteTeamOpen, setIsDeleteTeamOpen] = useState(false)
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    logo: "",
-  })
-
-  const handleAddTeam = () => {
-    // router.post("/teams", formData, {
-    //   onSuccess: () => {
-    setIsAddTeamOpen(false)
-    setFormData({ name: "", logo: "" })
-    console.log(formData)
-    // },
-    // })
-  }
-
-  const handleEditTeam = () => {
-    if (!selectedTeam) return
-
-    router.put(`/teams/${selectedTeam.id}`, formData, {
-      onSuccess: () => {
-        setIsEditTeamOpen(false)
-        setSelectedTeam(null)
-      },
+    const [isAddTeamOpen, setIsAddTeamOpen] = useState(false)
+    const [isEditTeamOpen, setIsEditTeamOpen] = useState(false)
+    const [isDeleteTeamOpen, setIsDeleteTeamOpen] = useState(false)
+    const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
+    const [formData, setFormData] = useState({
+        name: "",
+        logo: "",
     })
-  }
 
-  const handleDeleteTeam = () => {
-    if (!selectedTeam) return
+    const handleAddTeam = () => {
+        router.post("/teams", formData, {
+            onSuccess: () => {
+                setIsAddTeamOpen(false)
+                setFormData({ name: "", logo: "" })
+            },
+        })
+    }
 
-    router.delete(`/teams/${selectedTeam.id}`, {
-      onSuccess: () => {
-        setIsDeleteTeamOpen(false)
-        setSelectedTeam(null)
-      },
-    })
-  }
+    const handleEditTeam = () => {
+        if (!selectedTeam) return
 
-  const openEditDialog = (team: Team) => {
-    setSelectedTeam(team)
-    setFormData({
-      name: team.name,
-      logo: team.logo || "",
-    })
-    setIsEditTeamOpen(true)
-  }
+        router.put(`/teams/${selectedTeam.id}`, formData, {
+            onSuccess: () => {
+                setIsEditTeamOpen(false)
+                setSelectedTeam(null)
+            },
+        })
+    }
 
-  const openDeleteDialog = (team: Team) => {
-    setSelectedTeam(team)
-    setIsDeleteTeamOpen(true)
-  }
+    const handleDeleteTeam = () => {
+        if (!selectedTeam) return
+
+        router.delete(`/teams/${selectedTeam.id}`, {
+            onSuccess: () => {
+                setIsDeleteTeamOpen(false)
+                setSelectedTeam(null)
+            },
+        })
+    }
+
+    const openEditDialog = (team: Team) => {
+        setSelectedTeam(team)
+        setFormData({
+            name: team.name,
+            logo: team.logo || "",
+        })
+        setIsEditTeamOpen(true)
+    }
+
+    const openDeleteDialog = (team: Team) => {
+        setSelectedTeam(team)
+        setIsDeleteTeamOpen(true)
+    }
 
   return (
     <>
@@ -145,94 +144,94 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
         </CardContent>
       </Card>
 
-      {/* Add Team Dialog */}
-      <Dialog open={isAddTeamOpen} onOpenChange={setIsAddTeamOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Team</DialogTitle>
-            <DialogDescription>Enter the details for the new team.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="team-name">Team Name</Label>
-              <Input
-                id="team-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="team-logo">Logo URL (optional)</Label>
-              <Input
-                id="team-logo"
-                value={formData.logo}
-                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddTeamOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddTeam}>Add Team</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            {/* Add Team Dialog */}
+            <Dialog open={isAddTeamOpen} onOpenChange={setIsAddTeamOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Team</DialogTitle>
+                        <DialogDescription>Enter the details for the new team.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="team-name">Team Name</Label>
+                            <Input
+                                id="team-name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="team-logo">Logo URL (optional)</Label>
+                            <Input
+                                id="team-logo"
+                                value={formData.logo}
+                                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAddTeamOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleAddTeam}>Add Team</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-      {/* Edit Team Dialog */}
-      <Dialog open={isEditTeamOpen} onOpenChange={setIsEditTeamOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Team</DialogTitle>
-            <DialogDescription>Update the team details.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-team-name">Team Name</Label>
-              <Input
-                id="edit-team-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-team-logo">Logo URL (optional)</Label>
-              <Input
-                id="edit-team-logo"
-                value={formData.logo}
-                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditTeamOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditTeam}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            {/* Edit Team Dialog */}
+            <Dialog open={isEditTeamOpen} onOpenChange={setIsEditTeamOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Team</DialogTitle>
+                        <DialogDescription>Update the team details.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-team-name">Team Name</Label>
+                            <Input
+                                id="edit-team-name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-team-logo">Logo URL (optional)</Label>
+                            <Input
+                                id="edit-team-logo"
+                                value={formData.logo}
+                                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditTeamOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleEditTeam}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-      {/* Delete Team Confirmation Dialog */}
-      <Dialog open={isDeleteTeamOpen} onOpenChange={setIsDeleteTeamOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Team</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {selectedTeam?.name}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteTeamOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteTeam}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
+            {/* Delete Team Confirmation Dialog */}
+            <Dialog open={isDeleteTeamOpen} onOpenChange={setIsDeleteTeamOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Team</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete {selectedTeam?.name}? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteTeamOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDeleteTeam}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+    )
 }
 
