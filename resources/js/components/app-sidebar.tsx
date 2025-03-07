@@ -1,11 +1,9 @@
-import { NavFooter } from '@/components/nav-footer';
+
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Folder, LayoutGrid, PlayIcon, Trophy } from 'lucide-react';
-import AppLogo from './app-logo';
+import { LayoutGrid,  Users, Trophy, BarChart3,  UserPlus, BellIcon as  Medal, Calendar } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
@@ -14,23 +12,38 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Match Record',
+        title: 'Schedule',
+        url: '/games/create',
+        icon: Calendar,
+    },
+    {
+        title: 'Log Game',
         url: '/games/record',
         icon: Trophy,
+        
     },
     {
-        title: 'Match Create',
-        url: '/games/create',
-        icon: PlayIcon,
+        title: 'Teams',
+        url: '/teams',
+        icon: Medal,
     },
-];
-
-const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        url: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        title: 'Players',
+        url: '/players',
+        icon: Users,
     },
+    {
+        title: 'Add Player',
+        url: '/players/create',
+        icon: UserPlus,
+    },
+    
+    {
+        title: 'Statistics',
+        url: '/statistics',
+        icon: BarChart3,
+    },
+    
 ];
 
 export function AppSidebar() {
@@ -41,7 +54,7 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/dashboard" prefetch>
-                                <AppLogo />
+                                {/* <AppLogo /> */}
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -51,11 +64,6 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={mainNavItems} />
             </SidebarContent>
-
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
-                <NavUser />
-            </SidebarFooter>
         </Sidebar>
     );
 }

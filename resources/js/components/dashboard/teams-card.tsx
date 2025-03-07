@@ -1,10 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { router } from "@inertiajs/react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -13,10 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { PlusCircle, Edit, Trash2, MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { router } from "@inertiajs/react"
+import { Edit, MoreHorizontal, PlusCircle, Trash2, Users } from "lucide-react"
+import { useState } from "react"
 
 interface Team {
   id: number
@@ -42,12 +42,13 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
   })
 
   const handleAddTeam = () => {
-    router.post("/teams", formData, {
-      onSuccess: () => {
-        setIsAddTeamOpen(false)
-        setFormData({ name: "", logo: "" })
-      },
-    })
+    // router.post("/teams", formData, {
+    //   onSuccess: () => {
+    setIsAddTeamOpen(false)
+    setFormData({ name: "", logo: "" })
+    console.log(formData)
+    // },
+    // })
   }
 
   const handleEditTeam = () => {
@@ -88,27 +89,33 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
 
   return (
     <>
-      <Card className="border-0 shadow-none h-full">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-xl">Teams</CardTitle>
+      <Card className="border shadow-sm h-[500px]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gray-50 border-b">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Users className="h-5 w-5 text-gray-500" />
+            Teams
+          </CardTitle>
           <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Team
           </Button>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[220px] pr-4">
+        <CardContent className="p-4">
+          <ScrollArea className="h-[400px] pr-4">
             {teams.length === 0 ? (
               <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-muted-foreground">No teams added yet</p>
+                <p className="text-muted-foreground text-sm">No teams added yet</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {teams.map((team) => (
-                  <div key={team.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div
+                    key={team.id}
+                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
+                  >
                     <div>
                       <h3 className="font-medium">{team.name}</h3>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         {team.players_count} players • {team.games_count} games
                       </p>
                     </div>
