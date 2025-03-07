@@ -18,6 +18,10 @@ import { useState } from 'react';
 import Navbar from '@/components/navbar';
 import AppLayout from '@/layouts/app-layout';
 import Footer from '@/components/footer';
+import { router } from "@inertiajs/react"
+import { DialogHeader, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@radix-ui/react-dialog';
+
 
 
 
@@ -28,34 +32,96 @@ interface Team {
 
 interface Game {
     id: number;
-    home_team: Team;
-    away_team: Team;
+    team_a_id: Team;
+    team_b_id: Team;
     date: string;
     time: string;
     location: string;
 }
 
 interface FormData {
-    home_team_id: string;
-    away_team_id: string;
+    team_a_id: number;
+    team_b_id: number;
     date: string;
-    time: string;
+    //time: string;
     location: string;
 }
 
-export default function Create() {
+interface CreateProps {
+    game?: Game[];
+}
+
+export default function Create({ game }: CreateProps) {
     const [date, setDate] = useState<Date>(new Date());
-    const [formData, setFormData] = useState<FormData>({
-        home_team_id: '',
-        away_team_id: '',
+    const [formData, setFormData] = useState({
+        team_a_id: '',
+        team_b_id: '',
         date: format(date, 'yyyy-MM-dd'),
-        time: '19:00',
+        //time: '19:00',
         location: '',
     });
     const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
     const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [activeTab, setActiveTab] = useState('calendar');
+    const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+    const [isEditGameOpen, setIsEditGameOpen] = useState(false)
+    const [isDeleteGameOpen, setIsDeleteGameOpen] = useState(false)
+
+
+    const handleAddGame = () => {
+        router.post("/games", formData, {
+            onSuccess: () => {
+                //setIsAddTeamOpen(false)
+                setFormData({
+                    team_a_id: '',
+                    team_b_id: '',
+                    date: format(date, 'yyyy-MM-dd'),
+                    location: ''
+                })
+            },
+        })
+    }
+
+    const handleEditGame = () => {
+        if (!selectedGame) return
+
+        router.put(`/games/${selectedGame.id}`, formData, {
+            onSuccess: () => {
+                setIsEditGameOpen(false)
+                setSelectedGame(null)
+            },
+        })
+    }
+
+    const handleDeleteGame = () => {
+        if (!selectedGame) return
+
+        router.delete(`/games/${selectedGame.id}`, {
+            onSuccess: () => {
+                setIsDeleteGameOpen(false)
+                setSelectedGame(null)
+            },
+        })
+    }
+
+    const openEditDialog = (game: Game) => {
+        setSelectedGame(game)
+        setFormData({
+            team_a_id: "",
+            team_b_id: "",
+            date: format(date, 'yyyy-MM-dd'),
+            location: "",
+        })
+        setIsEditGameOpen(true)
+    }
+
+    const openDeleteDialog = (game: Game) => {
+        setSelectedGame(game)
+        setIsDeleteGameOpen(true)
+    }
+
+
 
     // Mock data for teams (would come from backend later)
     const teams: Team[] = [
@@ -69,40 +135,40 @@ export default function Create() {
     const scheduledGames: Game[] = [
         {
             id: 1,
-            home_team: teams[0],
-            away_team: teams[1],
+            team_a_id: teams[0],
+            team_b_id: teams[1],
             date: '2025-03-10',
             time: '19:00',
             location: 'Lisbon Sports Arena',
         },
         {
             id: 2,
-            home_team: teams[2],
-            away_team: teams[3],
+            team_a_id: teams[2],
+            team_b_id: teams[3],
             date: '2025-03-15',
             time: '18:30',
             location: 'Porto Stadium',
         },
         {
             id: 3,
-            home_team: teams[1],
-            away_team: teams[2],
+            team_a_id: teams[1],
+            team_b_id: teams[2],
             date: '2025-03-20',
             time: '20:00',
             location: 'Benfica Arena',
         },
         {
             id: 4,
-            home_team: teams[3],
-            away_team: teams[0],
+            team_a_id: teams[3],
+            team_b_id: teams[0],
             date: '2025-03-25',
             time: '19:30',
             location: 'Belenenses Stadium',
         },
         {
             id: 5,
-            home_team: teams[0],
-            away_team: teams[2],
+            team_a_id: teams[0],
+            team_b_id: teams[2],
             date: '2025-04-05',
             time: '18:00',
             location: 'Lisbon Sports Arena',
@@ -111,19 +177,23 @@ export default function Create() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        const team_a_id = parseInt(formData.team_a_id, 10);
+        const team_b_id = parseInt(formData.team_b_id, 10);
+
         // Validate form
         const newErrors: Partial<Record<keyof FormData, string>> = {};
 
-        if (!formData.home_team_id) {
-            newErrors.home_team_id = 'Home team is required';
+        if (!formData.team_a_id) {
+            newErrors.team_a_id = 'Home team is required';
         }
 
-        if (!formData.away_team_id) {
-            newErrors.away_team_id = 'Away team is required';
+        if (!formData.team_b_id) {
+            newErrors.team_b_id = 'Away team is required';
         }
 
-        if (formData.home_team_id === formData.away_team_id && formData.home_team_id) {
-            newErrors.away_team_id = 'Away team must be different from home team';
+        if (formData.team_a_id === formData.team_b_id && formData.team_a_id) {
+            newErrors.team_a_id = 'Away team must be different from home team';
         }
 
         if (!formData.location) {
@@ -179,7 +249,7 @@ export default function Create() {
     return (
         <>
             <Navbar />
-          <AppLayout breadcrumbs={[{ title: "Schedule", href: "/dashboard" }]}>
+            <AppLayout breadcrumbs={[{ title: "Schedule", href: "/dashboard" }]}>
                 <Head title="Game Management" />
 
                 <div className="py-12">
@@ -244,9 +314,8 @@ export default function Create() {
                                                         <button
                                                             key={day.toISOString()}
                                                             onClick={() => setSelectedDate(day)}
-                                                            className={`relative h-12 rounded-md p-1 ${isToday ? 'bg-blue-50 text-blue-600' : ''} ${
-                                                                isSelected ? 'bg-blue-100 font-medium text-blue-700' : ''
-                                                            } ${!isSameMonth(day, currentMonth) ? 'text-gray-300' : ''} hover:bg-gray-100`}
+                                                            className={`relative h-12 rounded-md p-1 ${isToday ? 'bg-blue-50 text-blue-600' : ''} ${isSelected ? 'bg-blue-100 font-medium text-blue-700' : ''
+                                                                } ${!isSameMonth(day, currentMonth) ? 'text-gray-300' : ''} hover:bg-gray-100`}
                                                         >
                                                             <span className="block text-sm">{format(day, 'd')}</span>
                                                             {dayHasGames && (
@@ -306,12 +375,13 @@ export default function Create() {
                                                     </div>
                                                 )}
 
+                                                {/*Edit Game*/}
                                                 <div className="space-y-4">
                                                     {selectedDateGames.map((game: Game) => (
                                                         <Card key={game.id} className="overflow-hidden">
                                                             <div className="flex items-center justify-between bg-blue-50 px-4 py-2">
                                                                 <h3 className="font-medium">
-                                                                    {game.home_team.name} vs {game.away_team.name}
+                                                                    {game.team_a_id.name} vs {game.team_b_id.name}
                                                                 </h3>
                                                                 <Badge variant="outline" className="bg-white">
                                                                     Game #{game.id}
@@ -327,10 +397,10 @@ export default function Create() {
                                                                     {game.location}
                                                                 </div>
                                                                 <div className="mt-2 flex justify-end gap-2">
-                                                                    <Button size="sm" variant="outline">
+                                                                    <Button size="sm" variant="outline" onClick={() => openEditDialog(game)}>
                                                                         Edit
                                                                     </Button>
-                                                                    <Button size="sm" variant="outline" className="text-red-600">
+                                                                    <Button size="sm" variant="outline" onClick={() => openDeleteDialog(game)} className="text-red-600">
                                                                         Cancel
                                                                     </Button>
                                                                 </div>
@@ -344,6 +414,116 @@ export default function Create() {
                                 </div>
                             </TabsContent>
 
+                            {/* Edit Game Dialog */}
+                            <Dialog open={isEditGameOpen} onOpenChange={setIsEditGameOpen}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Edit Game</DialogTitle>
+                                        <DialogDescription>Update the game details.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-team-name">Home Team</Label>
+                                            <Select
+                                                value={formData.team_a_id}
+                                                onValueChange={(value) => setFormData({ ...formData, team_a_id: value })}
+                                            >
+                                                <SelectTrigger id="home_team">
+                                                    <SelectValue placeholder="Select home team" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {teams.map((team) => (
+                                                        <SelectItem key={team.id} value={team.id.toString()}>
+                                                            {team.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.team_a_id && <p className="text-sm text-red-500">{errors.team_a_id}</p>}
+
+                                            {/*<Input
+                                                id="edit-team-name"
+                                                value={formData.team_a_id}
+                                                onChange={(e) => setFormData({ ...formData, team_a_id: e.target.value })}
+                                            />*/}
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-team-name">Team B</Label>
+                                            <Select
+                                                value={formData.team_b_id}
+                                                onValueChange={(value) => setFormData({ ...formData, team_b_id: value })}
+                                            >
+                                                <SelectTrigger id="away_team">
+                                                    <SelectValue placeholder="Select away team" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {teams.map((team) => (
+                                                        <SelectItem key={team.id} value={team.id.toString()}>
+                                                            {team.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.team_b_id && <p className="text-sm text-red-500">{errors.team_b_id}</p>}
+
+                                            {/*<Input
+                                                id="edit-team-name"
+                                                value={formData.team_b_id}
+                                                onChange={(e) => setFormData({ ...formData, team_b_id: e.target.value })}
+                                            />*/}
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="date">Game Date</Label>
+                                            <DatePicker
+                                                date={date}
+                                                onDateChange={(newDate) => {
+                                                    if (newDate) {
+                                                        setDate(newDate);
+                                                        setFormData({ ...formData, date: format(newDate, 'yyyy-MM-dd') });
+                                                    }
+                                                }}
+                                            />
+                                            {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="location">Location</Label>
+                                            <Input
+                                                id="location"
+                                                value={formData.location}
+                                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsEditGameOpen(false)}>
+                                            Cancel
+                                        </Button>
+                                        <Button onClick={handleEditGame}>Save Changes</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+
+                            {/* Delete Game Confirmation Dialog */}
+                            <Dialog open={isDeleteGameOpen} onOpenChange={setIsDeleteGameOpen}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Delete Game</DialogTitle>
+                                        <DialogDescription>
+                                            Are you sure you want to delete the game on {selectedGame?.date}? This action cannot be undone.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsDeleteGameOpen(false)}>
+                                            Cancel
+                                        </Button>
+                                        <Button variant="destructive" onClick={handleDeleteGame}>
+                                            Delete
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+
+                            {/*Create Game Dialog */}
                             <TabsContent value="create">
                                 <Card>
                                     <CardHeader>
@@ -357,8 +537,8 @@ export default function Create() {
                                                 <div className="space-y-2">
                                                     <Label htmlFor="home_team">Home Team</Label>
                                                     <Select
-                                                        value={formData.home_team_id}
-                                                        onValueChange={(value) => setFormData({ ...formData, home_team_id: value })}
+                                                        value={formData.team_a_id}
+                                                        onValueChange={(value) => setFormData({ ...formData, team_a_id: value })}
                                                     >
                                                         <SelectTrigger id="home_team">
                                                             <SelectValue placeholder="Select home team" />
@@ -371,15 +551,15 @@ export default function Create() {
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
-                                                    {errors.home_team_id && <p className="text-sm text-red-500">{errors.home_team_id}</p>}
+                                                    {errors.team_a_id && <p className="text-sm text-red-500">{errors.team_a_id}</p>}
                                                 </div>
 
                                                 {/* Away Team Select */}
                                                 <div className="space-y-2">
                                                     <Label htmlFor="away_team">Away Team</Label>
                                                     <Select
-                                                        value={formData.away_team_id}
-                                                        onValueChange={(value) => setFormData({ ...formData, away_team_id: value })}
+                                                        value={formData.team_b_id}
+                                                        onValueChange={(value) => setFormData({ ...formData, team_b_id: value })}
                                                     >
                                                         <SelectTrigger id="away_team">
                                                             <SelectValue placeholder="Select away team" />
@@ -392,7 +572,7 @@ export default function Create() {
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
-                                                    {errors.away_team_id && <p className="text-sm text-red-500">{errors.away_team_id}</p>}
+                                                    {errors.team_b_id && <p className="text-sm text-red-500">{errors.team_b_id}</p>}
                                                 </div>
                                             </div>
 
@@ -413,7 +593,7 @@ export default function Create() {
                                                 </div>
 
                                                 {/* Time Input */}
-                                                <div className="space-y-2">
+                                                {/*<div className="space-y-2">
                                                     <Label htmlFor="time">Game Time</Label>
                                                     <Input
                                                         id="time"
@@ -422,7 +602,7 @@ export default function Create() {
                                                         onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                                                     />
                                                     {errors.time && <p className="text-sm text-red-500">{errors.time}</p>}
-                                                </div>
+                                                </div>*/}
 
                                                 {/* Location Input */}
                                                 <div className="space-y-2">
@@ -442,7 +622,7 @@ export default function Create() {
                                                 <Button variant="outline" type="button" onClick={() => setActiveTab('calendar')}>
                                                     Cancel
                                                 </Button>
-                                                <Button type="submit">Create Game</Button>
+                                                <Button onClick={handleAddGame}>Create Game</Button>
                                             </div>
                                         </form>
                                     </CardContent>
@@ -451,7 +631,7 @@ export default function Create() {
                         </Tabs>
                     </div>
                 </div>
-                <Footer/>
+                <Footer />
             </AppLayout>
         </>
     );

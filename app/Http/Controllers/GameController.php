@@ -8,29 +8,50 @@ use Illuminate\Http\Request;
 
 class GameController extends Controller
 {
+
+    public function create(){
+        $games = $this-> show();
+
+        return Inertia::render('games.create', ['game' => $games]);
+    }
+
+
     public function show()
     {
-        return Inertia::render('xx', ['game' => Game::with(['teamA', 'teamB'])->get()]);
+        $games = Game::with(['teamA', 'teamB'])->get();
+
+        return ($games);
     }
 
     public function findById($id)
     {
-        return Inertia::render('xx', ['gameId' => Game::with(['teamA', 'teamB'])->findOrFail($id)]);
+        $games = Game::with(['teamA', 'teamB'])->findOrFail($id);
+
+        return Inertia::render('games.create', ['gameId' => $games]);
     }
 
     public function store(Request $request)
     {
+
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
             'date' => 'required|date',
             'location' => 'nullable|string|max:255',
-            'status' => 'string|max:50'
+            'status' => 'string|max:50',
         ]);
 
-        Game::create([$request->all()]);
+        //dd($request);
 
-        return redirect()->route('xx')->with('message', 'xx');
+        Game::create([
+            'team_a_id' => $request->team_a_id,
+            'team_b_id' => $request->team_b_id,
+            'date' => $request->date,
+            'location' => $request->location
+            // 'status' => $request->status
+        ]);
+
+        return redirect()->route('games.create')->with('message', 'Game added to schedule!');
     }
 
     public function update(Request $request, $id)
@@ -53,7 +74,7 @@ class GameController extends Controller
 
         $game->save();
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('games.create')->with('message', 'Game updated!');
     }
 
     public function delete($id)
@@ -62,6 +83,6 @@ class GameController extends Controller
 
         $game->delete();
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('games.create')->with('message', 'xx');
     }
 }
