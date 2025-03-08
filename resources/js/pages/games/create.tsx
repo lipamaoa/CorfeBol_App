@@ -358,7 +358,7 @@ export default function Create() {
                                                     <Label htmlFor="home_team">Home Team</Label>
                                                     <Select
                                                         value={formData.home_team_id}
-                                                        onValueChange={(value) => setFormData({ ...formData, home_team_id: value })}
+                                                        onValueChange={(value) => setFormData({ ...formData, home_team_id: parseInt(value) })}
                                                     >
                                                         <SelectTrigger id="home_team">
                                                             <SelectValue placeholder="Select home team" />
