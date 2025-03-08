@@ -9,6 +9,7 @@ use App\Http\Controllers\StatController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ActionController;
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\GameRecordController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -30,9 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('games.create');
 });
 
-Route::get('/games/record', function () {
-    return Inertia::render('games/record');
-})->name('games.record');
+Route::get('/games/record', [GameRecordController::class, 'show'])->name('games.record');
 
 // Route::middleware('auth')->group(function () {
 //     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -69,7 +68,11 @@ Route::prefix('games')->controller(GameController::class)->group(function () {
     Route::post('/', 'store')->name('games.store');
     Route::put('/{id}', 'update')->name('games.update');
     Route::delete('/{id}', 'delete')->name('games.delete');
+   
 });
+
+
+// Route::get('/games/record', [GameRecordController::class, 'show'])->name('games.record');
 
 Route::prefix('actions')->controller(ActionController::class)->group(function () {
     Route::get('/', 'show')->name('actions.show');
@@ -86,6 +89,7 @@ Route::prefix('stats')->controller(StatController::class)->group(function () {
     Route::put('/{id}', 'update')->name('stats.update');
     Route::delete('/{id}', 'delete')->name('stats.delete');
 });
+
 
 
 require __DIR__ . '/settings.php';

@@ -3,10 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 
 class Stat extends Model
 {
-    //
+    use HasFactory;
+
+    protected $fillable = [
+        'game_id',
+        'player_id',
+        'action_id',
+        'success',
+        'event_type',
+        'possession_id',
+        'possession_type',
+        'description',
+        'time'
+    ];
+
+    protected $casts = [
+        'success' => 'boolean',
+    ];
 
     public function game()
     {
