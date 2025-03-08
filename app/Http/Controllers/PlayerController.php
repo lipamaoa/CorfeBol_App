@@ -12,8 +12,8 @@ class PlayerController extends Controller
     public function show()
     {
         $player = Player::with('team')->get();
-
-        return Inertia::render('xx', ['player' => $player]);
+        // dd($player);
+        return $player;
     }
 
     public function findById($id)
@@ -44,7 +44,7 @@ class PlayerController extends Controller
             'photo'    => $photo
         ]);
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('dashboard')->with('message', 'OK');
     }
 
     public function update(Request $request, $id)
@@ -73,7 +73,7 @@ class PlayerController extends Controller
 
         $player->save();
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('dashboard')->with('message', 'OK');
     }
 
     public function delete($id)
@@ -85,6 +85,6 @@ class PlayerController extends Controller
 
         $player->delete();
 
-        return redirect()->route('xx')->with('message', 'xx');
+        return redirect()->route('dashboard')->with('message', 'OK');
     }
 }
