@@ -21,7 +21,7 @@ interface Team {
 interface Player {
     id: number;
     name: string;
-    number: number;
+    // number: number;
     position: 'attack' | 'defense';
     gender: 'male' | 'female';
     team_id: number;
@@ -73,45 +73,48 @@ const nextGame = {
 //   { id: 4, name: "Belenenses" },
 // ]
 
-const mockPlayers = [
-    {
-        id: 1,
-        name: "João Silva",
-        number: 7,
-        position: "attack",
-        gender: "male",
-        team_id: 1,
-        team_name: "Sporting CP",
-    },
-    {
-        id: 2,
-        name: "Maria Santos",
-        number: 10,
-        position: "defense",
-        gender: "female",
-        team_id: 1,
-        team_name: "Sporting CP",
-    },
-    // More players would be here
-]
+// const mockPlayers = [
+//     {
+//         id: 1,
+//         name: "João Silva",
+//         number: 7,
+//         position: "attack",
+//         gender: "male",
+//         team_id: 1,
+//         team_name: "Sporting CP",
+//     },
+//     {
+//         id: 2,
+//         name: "Maria Santos",
+//         number: 10,
+//         position: "defense",
+//         gender: "female",
+//         team_id: 1,
+//         team_name: "Sporting CP",
+//     },
+//     // More players would be here
+// ]
 
 // Mock stats data
-const mockStats = {
-    total_teams: 4,
-    total_players: 16,
-    total_games: 12,
-    goals_by_position: { attack: 36, defense: 18 },
-    goals_by_gender: { male: 32, female: 22 },
-    games_by_month: [
-        { month: "Jan", count: 2 },
-        { month: "Feb", count: 3 },
-        { month: "Mar", count: 2 },
-        { month: "Apr", count: 4 },
-        { month: "May", count: 1 },
-    ],
-}
+// const mockStats = {
+//     total_teams: 4,
+//     total_players: 16,
+//     total_games: 12,
+//     goals_by_position: { attack: 36, defense: 18 },
+//     goals_by_gender: { male: 32, female: 22 },
+//     games_by_month: [
+//         { month: "Jan", count: 2 },
+//         { month: "Feb", count: 3 },
+//         { month: "Mar", count: 2 },
+//         { month: "Apr", count: 4 },
+//         { month: "May", count: 1 },
+//     ],
+// }
 
 export default function Dashboard({ teams, players, stats }: DashboardProps) {
+    // console.log(players)
+    // console.log(teams)
+    
     // Format date for display
     const formatDate = (dateString) => {
         const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" }

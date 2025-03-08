@@ -9,11 +9,6 @@ use Illuminate\Support\Facades\Storage;
 
 class TeamController extends Controller
 {
-    public function dashboard()
-    {
-        $teams = $this->show();
-        return Inertia::render('dashboard', ['teams' => $teams]);
-    }
 
     public function show()
     {

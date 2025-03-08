@@ -1,14 +1,15 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Application;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\StatController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ActionController;
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -20,10 +21,7 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Route::get('/dashboard', function () {
-    //     return Inertia::render('dashboard');
-    // })->name('dashboard');
-    Route::get('/dashboard', [TeamController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'main'])->name('dashboard');
 
     Route::get('/games/create', function () {
         return Inertia::render('games/create');
@@ -46,8 +44,6 @@ Route::get('/games/record', function () {
 |--------------------------------------------------------------------------
 */
 
-// Route::get('/dashboard', [TeamController::class, 'show'])->name('teams.show');
-
 Route::prefix('teams')->controller(TeamController::class)->group(function () {
     Route::put('/{id}', 'update')->name('teams.update');
     Route::get('/{id}', 'findById')->name('teams.showid');
@@ -56,10 +52,9 @@ Route::prefix('teams')->controller(TeamController::class)->group(function () {
 });
 
 Route::prefix('players')->controller(PlayerController::class)->group(function () {
-    Route::get('/', 'show')->name('players.show');
+    Route::put('/{id}', 'update')->name('players.update');
     Route::get('/{id}', 'findById')->name('players.showid');
     Route::post('/', 'store')->name('players.store');
-    Route::put('/{id}', 'update')->name('players.update');
     Route::delete('/{id}', 'delete')->name('players.delete');
 });
 
