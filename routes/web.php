@@ -48,9 +48,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{id}', 'update')->name('games.update');
         Route::delete('/{id}', 'delete')->name('games.delete');
     });
+
+
+    // Game recording routes
+    Route::get('/games', [GameRecordController::class, 'record'])->name('games.show');
+    Route::get('/games/record/{id}', [GameRecordController::class, 'show'])->name('games.record');
+    Route::post('/games/end/{id}', [GameRecordController::class, 'endGame'])->name('games.end');
 });
 
-Route::get('/games/record', [GameRecordController::class, 'show'])->name('games.record');
+
+
 
 // Route::middleware('auth')->group(function () {
 //     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

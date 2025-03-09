@@ -5,11 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Game;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class GameController extends Controller
 {
 
-    public function show()
+    public function create()
+    {
+        $games = Game::with(['teamA', 'teamB'])->get();
+
+        return Inertia::render('games.create', ['game' => $games]);
+    }
+
+
+    public function show(Request $request)
     {
         // TeamController
         $teamController = app(TeamController::class);
@@ -53,6 +62,8 @@ class GameController extends Controller
 
     public function update(Request $request, $id)
     {
+        Log::info('Game update request data:', $request->all());
+
         $game = Game::findOrFail($id);
 
         $request->validate([

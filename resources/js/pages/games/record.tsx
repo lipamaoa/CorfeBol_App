@@ -29,6 +29,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react"
+import { Inertia } from "@inertiajs/inertia"
 
 // Define interfaces for our data types
 interface Player {
@@ -45,18 +46,20 @@ interface Action {
   description: string
 }
 
+interface Team {
+  id: number
+  name: string
+  logo_url: string | null
+}
+
 interface Game {
   id: number
   team_a_id: number
   team_b_id: number
-  teamA: {
-    id: number
-    name: string
-  }
-  teamB: {
-    id: number
-    name: string
-  }
+  teamA: Team
+  teamB: Team
+  score_team_a?: number | null
+  score_team_b?: number | null
 }
 
 interface Stat {
@@ -97,6 +100,8 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
   const [score, setScore] = useState(0)
   const [opponentScore, setOpponentScore] = useState(0)
   const [teamName, setTeamName] = useState(game?.teamA?.name || "Our Team")
+  const [teamALogo, setTeamALogo] = useState(game?.teamA?.logo_url || null)
+  const [teamBLogo, setTeamBLogo] = useState(game?.teamB?.logo_url || null)
   const [opponentName, setOpponentName] = useState(game?.teamB?.name || "Opponent")
   const [players, setPlayers] = useState<Player[]>(initialPlayers?.filter((p) => p.team_id === game.team_a_id) || [])
 
@@ -121,14 +126,26 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
   // Add these to the existing state declarations
   const [editEventDialogOpen, setEditEventDialogOpen] = useState(false)
   const [currentEditEvent, setCurrentEditEvent] = useState<Stat | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Timer functionality
   useEffect(() => {
+    // Recuperar o tempo salvo no localStorage, se existir
+    const savedTime = localStorage.getItem(`game_${game.id}_time`)
+    if (savedTime && matchTime === 0) {
+      setMatchTime(Number.parseInt(savedTime, 10))
+    }
+
     let interval: NodeJS.Timeout | null = null
 
     if (isRunning) {
       interval = setInterval(() => {
-        setMatchTime((prevTime) => prevTime + 1)
+        setMatchTime((prevTime) => {
+          const newTime = prevTime + 1
+          // Salvar o tempo atual no localStorage
+          localStorage.setItem(`game_${game.id}_time`, newTime.toString())
+          return newTime
+        })
       }, 1000)
     } else if (interval) {
       clearInterval(interval)
@@ -137,7 +154,55 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isRunning])
+  }, [isRunning, game.id, matchTime])
+
+  // Persistir o período no localStorage
+  useEffect(() => {
+    const savedPeriod = localStorage.getItem(`game_${game.id}_period`)
+    if (savedPeriod && period === 1) {
+      setPeriod(Number.parseInt(savedPeriod, 10))
+    }
+  }, [game.id, period])
+
+  // Adicione este useEffect após as declarações de estado
+  useEffect(() => {
+    // Inicializa os scores com base no jogo
+    if (game) {
+      if (game.score_team_a !== undefined && game.score_team_a !== null) {
+        setScore(game.score_team_a)
+      }
+
+      if (game.score_team_b !== undefined && game.score_team_b !== null) {
+        setOpponentScore(game.score_team_b)
+      }
+    }
+  }, [game])
+
+  // Adicione este useEffect após as declarações de estado
+  useEffect(() => {
+    // Inicializa o score com base nos eventos existentes
+    if (initialStats && initialStats.length > 0) {
+      const goalEvents = initialStats.filter((e) => {
+        const action = actions.find((a) => a.id === e.action_id)
+        return action?.code === "G" && e.success
+      })
+
+      setScore(goalEvents.length)
+    }
+  }, [initialStats, actions])
+
+  // Persistir o score no localStorage
+  useEffect(() => {
+    const savedScore = localStorage.getItem(`game_${game.id}_score`)
+    if (savedScore && score === 0) {
+      setScore(Number.parseInt(savedScore, 10))
+    }
+
+    const savedOpponentScore = localStorage.getItem(`game_${game.id}_opponent_score`)
+    if (savedOpponentScore && opponentScore === 0) {
+      setOpponentScore(Number.parseInt(savedOpponentScore, 10))
+    }
+  }, [game.id, score, opponentScore])
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
@@ -154,9 +219,11 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     setIsRunning(false)
   }
 
+  // Modificar a função changePeriod para salvar no localStorage
   const changePeriod = () => {
     const newPeriod = period + 1
     setPeriod(newPeriod)
+    localStorage.setItem(`game_${game.id}_period`, newPeriod.toString())
 
     // Record period change as an event
     const newEvent: Stat = {
@@ -248,186 +315,154 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     startNewPossession(currentPossession.type === "attack" ? "defense" : "attack")
   }
 
-  // Function to record an event to the database
-  const recordEvent = async (eventData: Stat) => {
-    try {
-      // Add possession data if not already present
-      if (!eventData.possession_id) {
-        eventData.possession_id = currentPossession.id
-        eventData.possession_type = currentPossession.type
-      }
-
-      // Ensure success is properly formatted
-      // If it's null, keep it null, otherwise convert to boolean
-      if (eventData.success !== null) {
-        eventData.success = Boolean(eventData.success)
-      }
-
-      // Create a temporary ID for immediate display
-      const tempEvent: Stat = {
-        ...eventData,
-        id: `temp-${Date.now()}`, // Temporary ID for immediate display
-        created_at: new Date().toISOString(),
-      }
-
-      // Add to local state immediately for instant feedback
-      setEvents((prevEvents) => [tempEvent, ...prevEvents])
-
-      // Log what we're sending to the server
-      console.log("Sending event data to server:", JSON.stringify(eventData))
-
-      // Get the CSRF token from the meta tag
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")
-      console.log("CSRF Token:", csrfToken)
-
-      // Then send to the server
-      const response = await fetch("/api/stats", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-TOKEN": csrfToken || "",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(eventData),
-      })
-
-      console.log("Response status:", response.status)
-
-      const responseData = await response.json()
-      console.log("Response data:", responseData)
-
-      if (!response.ok) {
-        throw new Error(`Failed to save event: ${responseData.error || response.statusText}`)
-      }
-
-      // Replace the temporary event with the saved one
-      setEvents((prevEvents) => prevEvents.map((event) => (event.id === tempEvent.id ? responseData : event)))
-
-      // Add event to current possession
-      if (
-        eventData.event_type !== "start_attack" &&
-        eventData.event_type !== "end_attack" &&
-        eventData.event_type !== "start_defense" &&
-        eventData.event_type !== "end_defense"
-      ) {
-        addEventToPossession(responseData)
-      }
-
-      // Update score if it's a goal
-      const action = actions.find((a) => a.id === eventData.action_id)
-      if (action?.code === "G" && eventData.success) {
-        setScore((prevScore) => prevScore + 1)
-
-        // If it's a goal, end the attack possession
-        if (currentPossession.type === "attack") {
-          endCurrentPossession("Goal scored", eventData.player_id || undefined)
-        }
-      }
-
-      // Check for events that end possessions
-      if (action?.code === "LC" || action?.code === "LM" || action?.code === "LL") {
-        if (!eventData.success && currentPossession.type === "attack") {
-          endCurrentPossession("Shot missed", eventData.player_id || undefined)
-        }
-      }
-
-      if (action?.code === "MP" || action?.code === "Pa") {
-        if (currentPossession.type === "attack") {
-          endCurrentPossession("Turnover", eventData.player_id || undefined)
-        }
-      }
-
-      if (action?.code === "RG" && eventData.success && currentPossession.type === "defense") {
-        endCurrentPossession("Rebound recovered", eventData.player_id || undefined)
-      }
-    } catch (error: any) {
-      console.error("Error saving event:", error)
-
-      // Extract a cleaner error message
-      let errorMessage = "An unknown error occurred"
-
-      if (error.message) {
-        // Avoid duplicating "Failed to save event" prefix
-        errorMessage = error.message.includes("Failed to save event")
-          ? error.message
-          : `Failed to save event: ${error.message}`
-      }
-
-      // Remove the temporary event from the state
-      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== tempEvent.id))
-
-      // Show error message
-      alert(errorMessage)
+ 
+  // Função para registrar um evento usando apenas Inertia
+  const recordEvent = (eventData: Stat) => {
+    if (isSubmitting) return
+  
+    setIsSubmitting(true)
+  
+    // Criar uma cópia do evento para evitar mutações no original
+    const eventToSend = { ...eventData }
+  
+    // Criar um ID temporário para feedback imediato no frontend
+    const tempEvent: Stat = {
+      ...eventToSend,
+      id: `temp-${Date.now()}`,
+      created_at: new Date().toISOString(),
     }
+  
+    // Adicionar evento temporário para feedback imediato no frontend
+    setEvents((prevEvents) => [tempEvent, ...prevEvents])
+  
+    // Usar Inertia.post para enviar o evento ao backend
+    Inertia.post(route("stats.store"), eventToSend, {
+      onSuccess: ({ props }) => {
+        const newEvent = props.event as Stat | undefined;
+  
+        if (newEvent) {
+          // Substituir o evento temporário pelo evento real salvo
+          setEvents((prevEvents) => prevEvents.map((event) => (event.id === tempEvent.id ? newEvent : event)))
+  
+          // Adicionar evento à posse atual, se for válido
+          if (
+            newEvent.event_type !== "start_attack" &&
+            newEvent.event_type !== "end_attack" &&
+            newEvent.event_type !== "start_defense" &&
+            newEvent.event_type !== "end_defense"
+          ) {
+            addEventToPossession(newEvent)
+          }
+  
+          // Atualizar placar se for um gol
+          const action = actions.find((a) => a.id === newEvent.action_id)
+          if (action?.code === "G" && newEvent.success) {
+            setScore((prevScore) => {
+              const newScore = prevScore + 1
+              localStorage.setItem(`game_${game.id}_score`, newScore.toString())
+              return newScore
+            })
+  
+            // Se for um gol, encerrar a posse de ataque
+            if (currentPossession.type === "attack") {
+              endCurrentPossession("Goal scored", newEvent.player_id || undefined)
+            }
+          }
+  
+          // Verificar eventos que encerram posses
+          if (["LC", "LM", "LL"].includes(action?.code || "")) {
+            if (!newEvent.success && currentPossession.type === "attack") {
+              endCurrentPossession("Shot missed", newEvent.player_id || undefined)
+            }
+          }
+  
+          if (["MP", "Pa"].includes(action?.code || "")) {
+            if (currentPossession.type === "attack") {
+              endCurrentPossession("Turnover", newEvent.player_id || undefined)
+            }
+          }
+  
+          if (action?.code === "RG" && newEvent.success && currentPossession.type === "defense") {
+            endCurrentPossession("Rebound recovered", newEvent.player_id || undefined)
+          }
+        }
+      },
+      onError: (errors) => {
+        console.error("Erro ao salvar evento:", errors)
+        alert(`Falha ao salvar evento: ${errors.message || "Erro desconhecido"}`)
+  
+        // Remover evento temporário em caso de erro
+        setEvents((prevEvents) => prevEvents.filter((event) => event.id !== tempEvent.id))
+      },
+      onFinish: () => {
+        setIsSubmitting(false)
+      },
+    })
   }
-
-  // Add these functions after the recordEvent function
+  
 
   // Function to handle editing an event
-  const handleEditEvent = async () => {
-    if (!currentEditEvent) return
-
-    try {
-      // Get the CSRF token from the meta tag
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")
-
-      // Send the update to the server
-      const response = await fetch(`/api/stats/${currentEditEvent.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-TOKEN": csrfToken || "",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(currentEditEvent),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(`Failed to update event: ${errorData.error || response.statusText}`)
+  const handleEditEvent = () => {
+    if (!currentEditEvent || isSubmitting) return
+  
+    setIsSubmitting(true)
+  
+    Inertia.put(route("stats.update", currentEditEvent.id), currentEditEvent, {
+      onSuccess: () => {
+        setEvents((prevEvents) =>
+          prevEvents.map((event) =>
+            event.id === currentEditEvent.id ? currentEditEvent : event
+          )
+        )
+        setEditEventDialogOpen(false)
+        setCurrentEditEvent(null)
+      },
+      onError: (errors) => {
+        console.error("Erro ao atualizar evento:", errors)
+        alert(`Falha ao atualizar evento: ${errors.message || "Erro desconhecido"}`)
+      },
+      onFinish: () => {
+        setIsSubmitting(false)
       }
-
-      const updatedEvent = await response.json()
-
-      // Update the events list
-      setEvents((prevEvents) => prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event)))
-
-      // Close the dialog
-      setEditEventDialogOpen(false)
-      setCurrentEditEvent(null)
-    } catch (error: any) {
-      console.error("Error updating event:", error)
-      alert(error.message)
-    }
+    })
   }
 
-  // Function to handle deleting an event
   const handleDeleteEvent = async (eventId: number | string) => {
-    if (!confirm("Are you sure you want to delete this event?")) return
+    if (!confirm("Are you sure you want to delete this event?")) return;
+    
+    setIsSubmitting(true);
 
     try {
-      // Get the CSRF token from the meta tag
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")
-
-      // Send the delete request to the server
-      const response = await fetch(`/api/stats/${eventId}`, {
-        method: "DELETE",
-        headers: {
-          "X-CSRF-TOKEN": csrfToken || "",
-          Accept: "application/json",
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(`Failed to delete event: ${errorData.error || response.statusText}`)
+      // Encontrar o evento antes de excluí-lo para referência
+      const eventToDelete = events.find(e => e.id === eventId);
+      if (!eventToDelete) {
+        throw new Error("Event not found in local state");
       }
+      
+      console.log("Deleting event:", eventToDelete);
 
-      // Remove the event from the events list
-      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId))
+     
+      Inertia.delete(`/stats/${eventId}`, {
+        onSuccess: () => {
+          console.log("Event deleted successfully");
+          
+          // Remove the event from the events list
+          setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+          
+         
+        },
+        onError: (errors) => {
+          console.error("Error deleting event:", errors);
+          alert(`Failed to delete event: ${errors.message || "Unknown error"}`);
+        },
+        onFinish: () => {
+          setIsSubmitting(false);
+        }
+      });
     } catch (error: any) {
-      console.error("Error deleting event:", error)
-      alert(error.message)
+      console.error("Error in handleDeleteEvent:", error);
+      alert(`Failed to delete event: ${error.message || "Unknown error"}`);
+      setIsSubmitting(false);
     }
   }
 
@@ -522,15 +557,15 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
     setPlayers(updatedPlayers)
 
-
     // Get a valid player ID - use the first player from attack players if available
-  const playerId = attackPlayers.length > 0 
-  ? attackPlayers[0].id 
-  : defensePlayers.length > 0 
-    ? defensePlayers[0].id 
-    : players.length > 0 
-      ? players[0].id 
-      : 1
+    const playerId =
+      attackPlayers.length > 0
+        ? attackPlayers[0].id
+        : defensePlayers.length > 0
+          ? defensePlayers[0].id
+          : players.length > 0
+            ? players[0].id
+            : 1
 
     // Record position switch event
     const eventData: Stat = {
@@ -547,6 +582,33 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
     recordEvent(eventData)
   }
+
+  // Function to end the game
+  const endGame = () => {
+    if (!confirm("Are you sure you want to end this game? This action cannot be undone.")) return
+  
+    Inertia.post(route("games.end", game.id), {
+      score_team_a: score,
+      score_team_b: opponentScore,
+      ended_at: new Date().toISOString(),
+    }, {
+      onSuccess: () => {
+        // Limpar dados do localStorage
+        localStorage.removeItem(`game_${game.id}_time`)
+        localStorage.removeItem(`game_${game.id}_period`)
+        localStorage.removeItem(`game_${game.id}_score`)
+        localStorage.removeItem(`game_${game.id}_opponent_score`)
+      },
+      onError: (errors) => {
+        console.error("Erro ao encerrar o jogo:", errors)
+        alert(`Falha ao encerrar o jogo: ${errors.message || "Erro desconhecido"}`)
+      },
+      onFinish: () => {
+        // Inertia automaticamente redireciona caso a resposta do backend contenha um redirecionamento
+      }
+    })
+  }
+  
 
   // Get event icon based on event type
   const getEventIcon = (eventType: string) => {
@@ -608,11 +670,33 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     }
   }
 
+  // Modificar as funções de atualização de score do oponente
+  const incrementOpponentScore = () => {
+    setOpponentScore((prevScore) => {
+      const newScore = prevScore + 1
+      localStorage.setItem(`game_${game.id}_opponent_score`, newScore.toString())
+      return newScore
+    })
+  }
+
+  const decrementOpponentScore = () => {
+    setOpponentScore((prevScore) => {
+      const newScore = Math.max(0, prevScore - 1)
+      localStorage.setItem(`game_${game.id}_opponent_score`, newScore.toString())
+      return newScore
+    })
+  }
+
   return (
     <>
       <Navbar />
       <AppLayout breadcrumbs={[{ title: "Log Game", href: "/dashboard" }]}>
-        <Head title="Record Game" />
+        <Head title="Record Game">
+          <meta
+            name="csrf-token"
+            content={document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || ""}
+          />
+        </Head>
 
         <div className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -634,6 +718,9 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                         <RotateCcw className="mr-1 h-4 w-4" />
                         Reset
                       </Button>
+                      <Button variant="destructive" size="sm" onClick={endGame}>
+                        End Game
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -641,6 +728,13 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="flex flex-col items-center justify-center">
                       <div className="text-3xl font-bold">{teamName}</div>
+                      {teamALogo && (
+                        <img
+                          src={teamALogo || "/placeholder.svg"}
+                          alt={`${teamName} Logo`}
+                          className="h-16 w-16 object-contain"
+                        />
+                      )}
                       <div className="mt-2 text-5xl font-bold">{score}</div>
                     </div>
                     <div className="flex flex-col items-center justify-center">
@@ -667,20 +761,19 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                     </div>
                     <div className="flex flex-col items-center justify-center">
                       <div className="text-3xl font-bold">{opponentName}</div>
+                      {teamBLogo && (
+                        <img
+                          src={teamBLogo || "/placeholder.svg"}
+                          alt={`${opponentName} Logo`}
+                          className="h-16 w-16 object-contain"
+                        />
+                      )}
                       <div className="mt-2 text-5xl font-bold">{opponentScore}</div>
                       <div className="mt-2 flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setOpponentScore((prevScore) => prevScore + 1)}
-                        >
+                        <Button variant="outline" size="sm" onClick={incrementOpponentScore}>
                           +1
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setOpponentScore((prevScore) => Math.max(0, prevScore - 1))}
-                        >
+                        <Button variant="outline" size="sm" onClick={decrementOpponentScore}>
                           -1
                         </Button>
                       </div>
@@ -731,6 +824,11 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                                     { top: "70%", left: "20%" }, // Bottom-left
                                     { top: "70%", left: "60%" }, // Bottom-right
                                   ]
+                                  console.log("All Players:", players)
+console.log("Attack Players:", getAttackPlayers())
+console.log("Defense Players:", getDefensePlayers())
+console.log("Substitutes:", getSubstitutes())
+
 
                                   return (
                                     <div
@@ -848,68 +946,73 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                           </div>
 
                           <ScrollArea className="h-[400px] rounded-md border p-4">
-                {events.length === 0 ? (
-                  <div className="text-muted-foreground py-8 text-center">
-                    No events recorded yet. Click on a player or "Record New Event" to get started.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {events.map((event) => {
-                      const player = players.find((p) => p.id === event.player_id)
-                      const action = actions.find((a) => a.id === event.action_id)
+                            {events.length === 0 ? (
+                              <div className="text-muted-foreground py-8 text-center">
+                                No events recorded yet. Click on a player or "Record New Event" to get started.
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                {events.map((event) => {
+                                  const player = players.find((p) => p.id === event.player_id)
+                                  const action = actions.find((a) => a.id === event.action_id)
 
-                      return (
-                        <div key={event.id} className={`flex items-start gap-3 rounded-lg border p-3`}>
-                          <div className={`rounded-full p-2 ${getEventColor(event.event_type, event.success)}`}>
-                            {getEventIcon(event.event_type)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{event.time}</span>
-                              {action && (
-                                <Badge variant="outline">
-                                  {action.code} - {action.description}
-                                </Badge>
-                              )}
-                              {player && (
-                                <Badge variant="outline" className="bg-blue-50">
-                                  {player.name}
-                                </Badge>
-                              )}
-                              {event.success !== null && (
-                                <Badge variant={event.success ? "success" : "destructive"} className="ml-auto">
-                                  {event.success ? "Success" : "Failed"}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="mt-1 text-sm">{event.description}</p>
-                            <div className="mt-2 flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openEditDialog(event)}
-                                className="h-7 px-2"
-                              >
-                                <Pencil className="h-3.5 w-3.5 mr-1" />
-                                Edit
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteEvent(event.id)}
-                                className="h-7 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                Delete
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </ScrollArea>
+                                  return (
+                                    <div key={event.id} className={`flex items-start gap-3 rounded-lg border p-3`}>
+                                      <div
+                                        className={`rounded-full p-2 ${getEventColor(event.event_type, event.success)}`}
+                                      >
+                                        {getEventIcon(event.event_type)}
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">{event.time}</span>
+                                          {action && (
+                                            <Badge variant="outline">
+                                              {action.code} - {action.description}
+                                            </Badge>
+                                          )}
+                                          {player && (
+                                            <Badge variant="outline" className="bg-blue-50">
+                                              {player.name}
+                                            </Badge>
+                                          )}
+                                          {event.success !== null && (
+                                            <Badge
+                                              variant={event.success ? "success" : "destructive"}
+                                              className="ml-auto"
+                                            >
+                                              {event.success ? "Success" : "Failed"}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <p className="mt-1 text-sm">{event.description}</p>
+                                        <div className="mt-2 flex justify-end gap-2">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => openEditDialog(event)}
+                                            className="h-7 px-2"
+                                          >
+                                            <Pencil className="h-3.5 w-3.5 mr-1" />
+                                            Edit
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDeleteEvent(event.id)}
+                                            className="h-7 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                            Delete
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </ScrollArea>
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -1361,101 +1464,99 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                   </div>
                 </DialogContent>
               </Dialog>
-              
-{/* Add this dialog after the existing event dialog */}
-<Dialog open={editEventDialogOpen} onOpenChange={setEditEventDialogOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Edit Event</DialogTitle>
-      <DialogDescription>
-        Update the details of this event.
-      </DialogDescription>
-    </DialogHeader>
-    {currentEditEvent && (
-      <div className="grid gap-4 py-4">
-        <div className="grid gap-2">
-          <Label htmlFor="edit-action">Action</Label>
-          <Select
-            value={currentEditEvent.action_id?.toString() || ""}
-            onValueChange={(value) => 
-              setCurrentEditEvent({
-                ...currentEditEvent,
-                action_id: Number(value)
-              })
-            }
-          >
-            <SelectTrigger id="edit-action">
-              <SelectValue placeholder="Select action" />
-            </SelectTrigger>
-            <SelectContent>
-              {actions.map((action) => (
-                <SelectItem key={action.id} value={action.id.toString()}>
-                  {action.code} - {action.description}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="edit-description">Description</Label>
-          <textarea
-            id="edit-description"
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="Add details about this event"
-            value={currentEditEvent.description || ""}
-            onChange={(e) => 
-              setCurrentEditEvent({
-                ...currentEditEvent,
-                description: e.target.value
-              })
-            }
-          />
-        </div>
+              {/* Edit Event Dialog */}
+              <Dialog open={editEventDialogOpen} onOpenChange={setEditEventDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Event</DialogTitle>
+                    <DialogDescription>Update the details of this event.</DialogDescription>
+                  </DialogHeader>
+                  {currentEditEvent && (
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="edit-action">Action</Label>
+                        <Select
+                          value={currentEditEvent.action_id?.toString() || ""}
+                          onValueChange={(value) =>
+                            setCurrentEditEvent({
+                              ...currentEditEvent,
+                              action_id: Number(value),
+                            })
+                          }
+                        >
+                          <SelectTrigger id="edit-action">
+                            <SelectValue placeholder="Select action" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {actions.map((action) => (
+                              <SelectItem key={action.id} value={action.id.toString()}>
+                                {action.code} - {action.description}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="edit-success-toggle">Successful Action</Label>
-          <div className="flex items-center space-x-2">
-            <Button
-              type="button"
-              variant={currentEditEvent.success ? "default" : "outline"}
-              size="sm"
-              onClick={() => 
-                setCurrentEditEvent({
-                  ...currentEditEvent,
-                  success: true
-                })
-              }
-              className={currentEditEvent.success ? "bg-green-500 hover:bg-green-600" : ""}
-            >
-              Success
-            </Button>
-            <Button
-              type="button"
-              variant={currentEditEvent.success === false ? "default" : "outline"}
-              size="sm"
-              onClick={() => 
-                setCurrentEditEvent({
-                  ...currentEditEvent,
-                  success: false
-                })
-              }
-              className={currentEditEvent.success === false ? "bg-red-500 hover:bg-red-600" : ""}
-            >
-              Failure
-            </Button>
-          </div>
-        </div>
-      </div>
-    )}
-    <div className="flex justify-end gap-2">
-      <Button variant="outline" onClick={() => setEditEventDialogOpen(false)}>
-        Cancel
-      </Button>
-      <Button onClick={handleEditEvent}>Save Changes</Button>
-    </div>
-  </DialogContent>
-</Dialog>
+                      <div className="grid gap-2">
+                        <Label htmlFor="edit-description">Description</Label>
+                        <textarea
+                          id="edit-description"
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          placeholder="Add details about this event"
+                          value={currentEditEvent.description || ""}
+                          onChange={(e) =>
+                            setCurrentEditEvent({
+                              ...currentEditEvent,
+                              description: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="edit-success-toggle">Successful Action</Label>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            type="button"
+                            variant={currentEditEvent.success ? "default" : "outline"}
+                            size="sm"
+                            onClick={() =>
+                              setCurrentEditEvent({
+                                ...currentEditEvent,
+                                success: true,
+                              })
+                            }
+                            className={currentEditEvent.success ? "bg-green-500 hover:bg-green-600" : ""}
+                          >
+                            Success
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={currentEditEvent.success === false ? "default" : "outline"}
+                            size="sm"
+                            onClick={() =>
+                              setCurrentEditEvent({
+                                ...currentEditEvent,
+                                success: false,
+                              })
+                            }
+                            className={currentEditEvent.success === false ? "bg-red-500 hover:bg-red-600" : ""}
+                          >
+                            Failure
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setEditEventDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleEditEvent}>Save Changes</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>

@@ -1,7 +1,5 @@
 <?php
 
-// Create this as database/seeders/TestGameSeeder.php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -9,102 +7,103 @@ use App\Models\Team;
 use App\Models\Player;
 use App\Models\Game;
 use App\Models\Action;
-use Carbon\Carbon;
+use App\Models\Stat;
+use Illuminate\Support\Facades\DB;
 
 class TestGameSeeder extends Seeder
 {
     public function run()
     {
-        // Create two teams
+        // 🔴 Desativar temporariamente as verificações de chave estrangeira
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+        // Apagar todos os dados manualmente (sem `truncate`)
+        Stat::query()->delete();
+        Player::query()->delete();
+        Team::query()->delete();
+        Game::query()->delete();
+        Action::query()->delete();
+
+        // 🔵 Reativar as verificações de chave estrangeira
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+        // Criar Equipas
         $teamA = Team::create([
-            'name' => 'Korfball Tigers',
-            'photo' => null
+            'name' => 'Sporting Korfball',
+          
         ]);
 
         $teamB = Team::create([
-            'name' => 'Korfball Eagles',
-            'photo' => null
+            'name' => 'Barcelona Korfball',
+            
         ]);
 
-        // Create players for Team A
-        $teamAPlayers = [
-            ['name' => 'John Smith', 'gender' => 'male', 'position' => 'attack'],
-            ['name' => 'Emma Johnson', 'gender' => 'female', 'position' => 'attack'],
-            ['name' => 'Michael Brown', 'gender' => 'male', 'position' => 'defense'],
-            ['name' => 'Sophia Davis', 'gender' => 'female', 'position' => 'defense'],
-            ['name' => 'James Wilson', 'gender' => 'male', 'position' => 'attack'], // substitute
-            ['name' => 'Olivia Martinez', 'gender' => 'female', 'position' => 'defense'], // substitute
-        ];
+     
 
-        foreach ($teamAPlayers as $playerData) {
-            Player::create([
+      
+
+        // Criar Jogadores para a equipa A
+        $playersA = [];
+        $positions = ['attack', 'attack', 'defense', 'defense', 'attack', 'defense', 'attack', 'defense'];
+        $names = ['João Silva', 'Ana Costa', 'Pedro Mendes', 'Maria Santos', 'Rui Fonseca', 'Sofia Ribeiro', 'Carlos Rocha', 'Inês Matos'];
+        $genders = ['male', 'female', 'male', 'female', 'male', 'female', 'male', 'female'];
+
+        foreach ($names as $index => $name) {
+            $playersA[] = Player::create([
                 'team_id' => $teamA->id,
-                'name' => $playerData['name'],
-                'gender' => $playerData['gender'],
-                'position' => $playerData['position'],
-                'photo' => null
+                'name' => $name,
+                'gender' => $genders[$index],
+                'position' => $positions[$index],
+               
             ]);
         }
 
-        // Create players for Team B
-        $teamBPlayers = [
-            ['name' => 'William Taylor', 'gender' => 'male', 'position' => 'attack'],
-            ['name' => 'Isabella Anderson', 'gender' => 'female', 'position' => 'attack'],
-            ['name' => 'Alexander Thomas', 'gender' => 'male', 'position' => 'defense'],
-            ['name' => 'Mia Rodriguez', 'gender' => 'female', 'position' => 'defense'],
-            ['name' => 'Benjamin White', 'gender' => 'male', 'position' => 'attack'], // substitute
-            ['name' => 'Charlotte Lewis', 'gender' => 'female', 'position' => 'defense'], // substitute
-        ];
+        // Criar Jogadores para a equipa B
+        $playersB = [];
+        $namesB = ['Sergio Ramos', 'Clara Diaz', 'Fernando López', 'Isabel García', 'David Martín', 'Elena Torres', 'Alberto Ruiz', 'Marta Gómez'];
 
-        foreach ($teamBPlayers as $playerData) {
-            Player::create([
+        foreach ($namesB as $index => $name) {
+            $playersB[] = Player::create([
                 'team_id' => $teamB->id,
-                'name' => $playerData['name'],
-                'gender' => $playerData['gender'],
-                'position' => $playerData['position'],
-                'photo' => null
+                'name' => $name,
+                'gender' => $genders[$index],
+                'position' => $positions[$index],
+                
             ]);
         }
 
-        // Create a game
+        // Criar um jogo
         $game = Game::create([
             'team_a_id' => $teamA->id,
             'team_b_id' => $teamB->id,
-            'date' => Carbon::now()->addDays(3)->format('Y-m-d'),
-            'location' => 'Korfball Arena',
-            'status' => 'scheduled'
+            'date' => now()->addDays(1)->format('Y-m-d H:i:s'), // Define um datetime válido para amanhã
+    'location' => 'Lisboa, Portugal',
+          
         ]);
 
-        // Make sure action codes exist
-        if (Action::count() === 0) {
-            $actions = [
-                ['code' => 'G', 'description' => 'Goal'],
-                ['code' => 'A', 'description' => 'Assist'],
-                ['code' => 'RG', 'description' => 'Rebound Won'],
-                ['code' => 'RP', 'description' => 'Rebound Lost'],
-                ['code' => 'D', 'description' => 'Defense'],
-                ['code' => 'MP', 'description' => 'Bad Pass'],
-                ['code' => 'Pa', 'description' => 'Traveling'],
-                ['code' => 'LC', 'description' => 'Short Shot'],
-                ['code' => 'LM', 'description' => 'Mid Shot'],
-                ['code' => 'LL', 'description' => 'Long Shot'],
-                ['code' => 'P', 'description' => 'Layup'],
-                ['code' => 'L', 'description' => 'Free Throw'],
-                ['code' => 'Pe', 'description' => 'Penalty'],
-                ['code' => 'F', 'description' => 'Foul'],
-                ['code' => 'S', 'description' => 'Substitution'],
-                ['code' => 'PS', 'description' => 'Position Switch'],
-                ['code' => 'T', 'description' => 'Timeout'],
-                ['code' => 'O', 'description' => 'Other'],
-            ];
+        // Simulação de eventos do jogo
+        $eventTypes = ['goal', 'assist', 'missed_pass', 'defense', 'rebound', 'foul', 'substitution'];
+        $possessions = range(1, 5);
+        $times = ['00:30', '02:15', '05:42', '07:10', '10:20', '15:00', '20:45'];
 
-            foreach ($actions as $action) {
-                Action::create($action);
-            }
+        foreach ($times as $index => $time) {
+            $player = $playersA[array_rand($playersA)];
+            $action = Action::where('code', array_rand(['G', 'A', 'MP', 'D', 'RG', 'F', 'S']))->first();
+            $possession = $possessions[array_rand($possessions)];
+
+            Stat::create([
+                'game_id' => $game->id,
+                'player_id' => $player->id,
+                'action_id' => $action->id,
+                'success' => rand(0, 1),
+                'event_type' => $eventTypes[array_rand($eventTypes)],
+                'possession_id' => $possession,
+                'possession_type' => rand(0, 1) ? 'attack' : 'defense',
+                'description' => "Jogada de {$player->name}",
+                'time' => $time
+            ]);
         }
 
-        echo "Test game created with ID: {$game->id}\n";
-        echo "Team A: {$teamA->name} (ID: {$teamA->id})\n";
-        echo "Team B: {$teamB->name} (ID: {$teamB->id})\n";
+        echo "✅ Jogo e estatísticas populadas com sucesso!";
     }
 }
