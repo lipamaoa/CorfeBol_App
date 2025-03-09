@@ -50,9 +50,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 
-     // Game recording routes
- Route::get('/games/{id}/record', [GameRecordController::class, 'show'])->name('games.record');
- Route::post('/games/{id}/end', [GameController::class, 'endGame'])->name('games.end');
+    // Game recording routes
+    Route::get('/games', [GameRecordController::class, 'record'])->name('games.show');
+    Route::get('/games/record/{id}', [GameRecordController::class, 'show'])->name('games.record');
+    Route::post('/games/end/{id}', [GameRecordController::class, 'endGame'])->name('games.end');
 });
 
 

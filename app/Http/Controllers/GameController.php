@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Log;
 class GameController extends Controller
 {
 
-    public function create(){
-        $games = $this-> show();
+    public function create()
+    {
+        $games = Game::with(['teamA', 'teamB'])->get();
 
         return Inertia::render('games.create', ['game' => $games]);
     }
@@ -59,11 +60,11 @@ class GameController extends Controller
         return redirect()->route('games.create')->with('message', 'Game added to schedule!');
     }
 
-  public function update(Request $request, $id)
-  {
-      Log::info('Game update request data:', $request->all());
-      
-      $game = Game::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        Log::info('Game update request data:', $request->all());
+
+        $game = Game::findOrFail($id);
 
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
@@ -93,4 +94,3 @@ class GameController extends Controller
         return redirect()->route('games.create')->with('message', 'xx');
     }
 }
-
