@@ -24,9 +24,30 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'main'])->name('dashboard');
 
-    Route::get('/games/create', function () {
-        return Inertia::render('games/create');
-    })->name('games.create');
+    Route::prefix('teams')->controller(TeamController::class)->group(function () {
+        Route::put('/{id}', 'update')->name('teams.update');
+        Route::get('/{id}', 'findById')->name('teams.showid');
+        Route::post('/', 'store')->name('teams.store');
+        Route::delete('/{id}', 'delete')->name('teams.delete');
+    });
+
+    Route::prefix('players')->controller(PlayerController::class)->group(function () {
+        Route::put('/{id}', 'update')->name('players.update');
+        Route::get('/{id}', 'findById')->name('players.showid');
+        Route::post('/', 'store')->name('players.store');
+        Route::delete('/{id}', 'delete')->name('players.delete');
+    });
+
+    // Route::get('/games/create', function () {
+    //     return Inertia::render('games/create');
+    // })->name('games.create');
+    Route::prefix('games')->controller(GameController::class)->group(function () {
+        Route::get('/create', 'show')->name('games.create');
+        Route::get('/{id}', 'findById')->name('games.showid');
+        Route::post('/', 'store')->name('games.store');
+        Route::put('/{id}', 'update')->name('games.update');
+        Route::delete('/{id}', 'delete')->name('games.delete');
+    });
 });
 
 Route::get('/games/record', [GameRecordController::class, 'show'])->name('games.record');
@@ -42,33 +63,6 @@ Route::get('/games/record', [GameRecordController::class, 'show'])->name('games.
 | Routes CRUD Geral
 |--------------------------------------------------------------------------
 */
-
-Route::prefix('teams')->controller(TeamController::class)->group(function () {
-    Route::put('/{id}', 'update')->name('teams.update');
-    Route::get('/{id}', 'findById')->name('teams.showid');
-    Route::post('/', 'store')->name('teams.store');
-    Route::delete('/{id}', 'delete')->name('teams.delete');
-});
-
-Route::prefix('players')->controller(PlayerController::class)->group(function () {
-    Route::put('/{id}', 'update')->name('players.update');
-    Route::get('/{id}', 'findById')->name('players.showid');
-    Route::post('/', 'store')->name('players.store');
-    Route::delete('/{id}', 'delete')->name('players.delete');
-});
-
-Route::prefix('games')->controller(GameController::class)->group(function () {
-    Route::get('/', 'show')->name('games.show');
-    Route::get('/{id}', 'findById')->name('games.showid');
-    Route::post('/', 'store')->name('games.store');
-    Route::put('/{id}', 'update')->name('games.update');
-    Route::delete('/{id}', 'delete')->name('games.delete');
-   
-});
-
-
-// Route::get('/games/record', [GameRecordController::class, 'show'])->name('games.record');
-
 Route::prefix('actions')->controller(ActionController::class)->group(function () {
     Route::get('/', 'show')->name('actions.show');
     Route::get('/{id}', 'findById')->name('actions.showid');

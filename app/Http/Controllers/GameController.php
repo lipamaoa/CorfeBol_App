@@ -9,30 +9,29 @@ use Illuminate\Http\Request;
 class GameController extends Controller
 {
 
-    public function create(){
-        $games = $this-> show();
-
-        return Inertia::render('games.create', ['game' => $games]);
-    }
-
-
     public function show()
     {
+        // TeamController
+        $teamController = app(TeamController::class);
+        $teams = $teamController->show();
+
+        // Games
         $games = Game::with(['teamA', 'teamB'])->get();
 
-        return ($games);
+        return Inertia::render('games/create', ['games' => $games, 'teams' => $teams]);
     }
 
     public function findById($id)
     {
         $games = Game::with(['teamA', 'teamB'])->findOrFail($id);
 
-        return Inertia::render('games.create', ['gameId' => $games]);
+        return Inertia::render('games/create', ['gameId' => $games]);
     }
 
     public function store(Request $request)
     {
 
+        // dd($request);
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
@@ -41,14 +40,12 @@ class GameController extends Controller
             'status' => 'string|max:50',
         ]);
 
-        //dd($request);
 
         Game::create([
             'team_a_id' => $request->team_a_id,
             'team_b_id' => $request->team_b_id,
             'date' => $request->date,
             'location' => $request->location
-            // 'status' => $request->status
         ]);
 
         return redirect()->route('games.create')->with('message', 'Game added to schedule!');

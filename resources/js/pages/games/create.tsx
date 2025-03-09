@@ -22,44 +22,46 @@ import { router } from "@inertiajs/react"
 import { DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@radix-ui/react-dialog';
 
-
-
-
 interface Team {
-    id: number;
-    name: string;
+    id: number
+    name: string
+    photo?: string
+    created_at: string
+    players_count: number
+    games_count: number
 }
 
 interface Game {
     id: number;
-    team_a_id: Team;
-    team_b_id: Team;
+    team_a_id?: number;
+    team_b_id?: number;
     date: string;
-    time: string;
+    time?: string;
     location: string;
+    team_a: Team;
+    team_b: Team;
 }
 
 interface FormData {
     team_a_id: number;
     team_b_id: number;
     date: string;
-    //time: string;
     location: string;
 }
 
 interface CreateProps {
-    game?: Game[];
+    games?: Game[];
+    teams?: Team[];
 }
 
-export default function Create({ game }: CreateProps) {
+export default function Create({ games, teams }: CreateProps) {
     const [date, setDate] = useState<Date>(new Date());
     const [formData, setFormData] = useState({
         team_a_id: '',
         team_b_id: '',
-        date: format(date, 'yyyy-MM-dd'),
-        //time: '19:00',
+        date: date,
         location: '',
-    });
+    }) || [];
     const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
     const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -72,11 +74,10 @@ export default function Create({ game }: CreateProps) {
     const handleAddGame = () => {
         router.post("/games", formData, {
             onSuccess: () => {
-                //setIsAddTeamOpen(false)
                 setFormData({
                     team_a_id: '',
                     team_b_id: '',
-                    date: format(date, 'yyyy-MM-dd'),
+                    date: date,
                     location: ''
                 })
             },
@@ -110,7 +111,7 @@ export default function Create({ game }: CreateProps) {
         setFormData({
             team_a_id: "",
             team_b_id: "",
-            date: format(date, 'yyyy-MM-dd'),
+            date: date,
             location: "",
         })
         setIsEditGameOpen(true)
@@ -121,59 +122,17 @@ export default function Create({ game }: CreateProps) {
         setIsDeleteGameOpen(true)
     }
 
+    // Get Games information for calendar
+    const scheduledGames: Game[] = games?.map(game => {
+        const dateOnly = game.date.split('T')[0]
+        const timeOnly = game.date.substring(11, 16)
 
-
-    // Mock data for teams (would come from backend later)
-    const teams: Team[] = [
-        { id: 1, name: 'Sporting CP' },
-        { id: 2, name: 'Benfica' },
-        { id: 3, name: 'FC Porto' },
-        { id: 4, name: 'Belenenses' },
-    ];
-
-    // Mock data for scheduled games
-    const scheduledGames: Game[] = [
-        {
-            id: 1,
-            team_a_id: teams[0],
-            team_b_id: teams[1],
-            date: '2025-03-10',
-            time: '19:00',
-            location: 'Lisbon Sports Arena',
-        },
-        {
-            id: 2,
-            team_a_id: teams[2],
-            team_b_id: teams[3],
-            date: '2025-03-15',
-            time: '18:30',
-            location: 'Porto Stadium',
-        },
-        {
-            id: 3,
-            team_a_id: teams[1],
-            team_b_id: teams[2],
-            date: '2025-03-20',
-            time: '20:00',
-            location: 'Benfica Arena',
-        },
-        {
-            id: 4,
-            team_a_id: teams[3],
-            team_b_id: teams[0],
-            date: '2025-03-25',
-            time: '19:30',
-            location: 'Belenenses Stadium',
-        },
-        {
-            id: 5,
-            team_a_id: teams[0],
-            team_b_id: teams[2],
-            date: '2025-04-05',
-            time: '18:00',
-            location: 'Lisbon Sports Arena',
-        },
-    ];
+        return {
+            ...game,
+            date: dateOnly,
+            time: timeOnly,
+        };
+    }) || [];
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -184,15 +143,15 @@ export default function Create({ game }: CreateProps) {
         // Validate form
         const newErrors: Partial<Record<keyof FormData, string>> = {};
 
-        if (!formData.team_a_id) {
+        if (!team_a_id) {
             newErrors.team_a_id = 'Home team is required';
         }
 
-        if (!formData.team_b_id) {
+        if (!team_b_id) {
             newErrors.team_b_id = 'Away team is required';
         }
 
-        if (formData.team_a_id === formData.team_b_id && formData.team_a_id) {
+        if (team_a_id === team_b_id && team_a_id) {
             newErrors.team_a_id = 'Away team must be different from home team';
         }
 
@@ -203,8 +162,7 @@ export default function Create({ game }: CreateProps) {
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
-            // Handle form submission - would post to server in real app
-            console.log('Form submitted:', formData);
+            handleAddGame()
         }
     };
 
@@ -364,7 +322,6 @@ export default function Create({ game }: CreateProps) {
                                                                     setDate(selectedDate);
                                                                     setFormData({
                                                                         ...formData,
-                                                                        date: format(selectedDate, 'yyyy-MM-dd'),
                                                                     });
                                                                 }}
                                                             >
@@ -381,7 +338,7 @@ export default function Create({ game }: CreateProps) {
                                                         <Card key={game.id} className="overflow-hidden">
                                                             <div className="flex items-center justify-between bg-blue-50 px-4 py-2">
                                                                 <h3 className="font-medium">
-                                                                    {game.team_a_id.name} vs {game.team_b_id.name}
+                                                                    {game.team_a.name} vs {game.team_b.name}
                                                                 </h3>
                                                                 <Badge variant="outline" className="bg-white">
                                                                     Game #{game.id}
@@ -448,7 +405,7 @@ export default function Create({ game }: CreateProps) {
                                             />*/}
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="edit-team-name">Team B</Label>
+                                            <Label htmlFor="edit-team-name">Away Team</Label>
                                             <Select
                                                 value={formData.team_b_id}
                                                 onValueChange={(value) => setFormData({ ...formData, team_b_id: value })}
@@ -585,7 +542,6 @@ export default function Create({ game }: CreateProps) {
                                                         onDateChange={(newDate) => {
                                                             if (newDate) {
                                                                 setDate(newDate);
-                                                                setFormData({ ...formData, date: format(newDate, 'yyyy-MM-dd') });
                                                             }
                                                         }}
                                                     />
@@ -622,7 +578,7 @@ export default function Create({ game }: CreateProps) {
                                                 <Button variant="outline" type="button" onClick={() => setActiveTab('calendar')}>
                                                     Cancel
                                                 </Button>
-                                                <Button onClick={handleAddGame}>Create Game</Button>
+                                                <Button>Create Game</Button>
                                             </div>
                                         </form>
                                     </CardContent>
