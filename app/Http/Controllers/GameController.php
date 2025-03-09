@@ -5,11 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Game;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class GameController extends Controller
 {
 
-    public function show()
+    public function create(){
+        $games = $this-> show();
+
+        return Inertia::render('games.create', ['game' => $games]);
+    }
+
+
+    public function show(Request $request)
     {
         // TeamController
         $teamController = app(TeamController::class);
@@ -51,9 +59,11 @@ class GameController extends Controller
         return redirect()->route('games.create')->with('message', 'Game added to schedule!');
     }
 
-    public function update(Request $request, $id)
-    {
-        $game = Game::findOrFail($id);
+  public function update(Request $request, $id)
+  {
+      Log::info('Game update request data:', $request->all());
+      
+      $game = Game::findOrFail($id);
 
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
@@ -83,3 +93,4 @@ class GameController extends Controller
         return redirect()->route('games.create')->with('message', 'xx');
     }
 }
+

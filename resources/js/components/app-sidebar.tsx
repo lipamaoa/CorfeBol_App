@@ -10,6 +10,7 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         url: '/dashboard',
         icon: LayoutGrid,
+        
     },
     {
         title: 'Schedule',
@@ -17,11 +18,22 @@ const mainNavItems: NavItem[] = [
         icon: Calendar,
     },
     {
-        title: 'Log Game',
-        url: '/games/record',
+        title: "Log Game",
+        url: "/games", // Leva para a lista de jogos onde o usuário pode selecionar um para registrar
         icon: Trophy,
-        
-    },
+        children: [
+          {
+            title: "Active Games",
+            url: "/games?status=scheduled", // Filtrar por jogos agendados
+            icon: Trophy,
+          },
+          {
+            title: "Recent Games",
+            url: "/games?status=completed", // Filtrar por jogos completados
+            icon: Trophy,
+          },
+        ],
+      },
     {
         title: 'Teams',
         url: '/teams',
