@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { router } from "@inertiajs/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,11 +28,11 @@ interface Team {
 interface Player {
     id: number
     name: string
-    number: number
     position: "attack" | "defense"
     gender: "male" | "female"
     team_id: number
     team_name: string
+    photo?: string
 }
 
 interface PlayersCardProps {
@@ -47,44 +47,61 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
     const [formData, setFormData] = useState({
         name: "",
-        number: "",
         position: "attack",
         gender: "male",
         team_id: "",
+        photo: null as File | null,
     })
 
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+    const fileRef = useRef<HTMLInputElement>(null)
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null
+
+        if (file) {
+            setFormData(prev => ({ ...prev, photo: file }))
+
+            const objectUrl = URL.createObjectURL(file)
+            setPhotoPreview(objectUrl)
+        }
+    }
+
     const handleAddPlayer = () => {
-        router.post(
-            "/players",
-            {
-                ...formData,
-                number: Number.parseInt(formData.number) || 0,
-                team_id: Number.parseInt(formData.team_id) || 0,
+        const data = new FormData()
+        data.append('name', formData.name)
+        data.append('position', formData.position)
+        data.append('gender', formData.gender)
+        data.append('team_id', formData.team_id)
+        if (formData.photo) data.append('photo', formData.photo)
+
+        router.post("/players", data, {
+            onSuccess: () => {
+                setIsAddPlayerOpen(false)
+                resetForm()
             },
-            {
-                onSuccess: () => {
-                    setIsAddPlayerOpen(false)
-                    resetForm()
-                },
-                preserveScroll: true,
-            },
+            preserveScroll: true,
+        },
         )
     }
 
     const handleEditPlayer = () => {
         if (!selectedPlayer) return
 
-        router.put(
-            `/players/${selectedPlayer.id}`,
-            {
-                ...formData,
-                number: Number.parseInt(formData.number) || 0,
-                team_id: Number.parseInt(formData.team_id) || 0,
-            },
+        const data = new FormData()
+        data.append('name', formData.name)
+        data.append('position', formData.position)
+        data.append('gender', formData.gender)
+        data.append('team_id', formData.team_id)
+        data.append('_method', 'PUT')
+        if (formData.photo) data.append('photo', formData.photo)
+
+        router.post(`/players/${selectedPlayer.id}`, data,
             {
                 onSuccess: () => {
                     setIsEditPlayerOpen(false)
                     setSelectedPlayer(null)
+                    setPhotoPreview(null)
                 },
                 preserveScroll: true,
             },
@@ -107,11 +124,12 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
         setSelectedPlayer(player)
         setFormData({
             name: player.name,
-            number: player.number.toString(),
             position: player.position,
             gender: player.gender,
             team_id: player.team_id.toString(),
+            photo: null,
         })
+        setPhotoPreview(player.photo || null)
         setIsEditPlayerOpen(true)
     }
 
@@ -123,11 +141,12 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
     const resetForm = () => {
         setFormData({
             name: "",
-            number: "",
             position: "attack",
             gender: "male",
             team_id: "",
+            photo: null,
         })
+        setPhotoPreview(null)
     }
 
     const getPositionBadge = (position: string) => {
@@ -181,11 +200,20 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                                         className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
                                     >
                                         <div className="flex items-center gap-2">
+                                            {player.photo && (
+                                                <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
+                                                    <img
+                                                        src={`/storage/${player.photo}`}
+                                                        alt={player.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                </div>
+                                            )}
                                             <div
                                                 className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold ${player.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"
                                                     }`}
                                             >
-                                                {player.number}
+                                                {/* {player.number} */}
                                             </div>
                                             <div>
                                                 <h3 className="font-medium">{player.name}</h3>
@@ -239,15 +267,6 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="player-number">Jersey Number</Label>
-                            <Input
-                                id="player-number"
-                                type="number"
-                                value={formData.number}
-                                onChange={(e) => setFormData({ ...formData, number: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
                             <Label htmlFor="player-position">Position</Label>
                             <Select
                                 value={formData.position}
@@ -292,9 +311,34 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="player-team">Photo</Label>
+                            <div className="flex flex-col gap-2">
+                                <Input
+                                    id="team-photo"
+                                    type="file"
+                                    accept="image/*"
+                                    ref={fileRef}
+                                    onChange={handleFileChange}
+                                />
+                                {photoPreview && (
+                                    <div className="mt-2 max-w-xs">
+                                        <img
+                                            src={photoPreview}
+                                            alt="Preview"
+                                            className="rounded-md max-h-32 object-cover"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddPlayerOpen(false)}>
+                        <Button variant="outline" onClick={() => {
+                            setIsAddPlayerOpen(false)
+                            setPhotoPreview(null)
+                            resetForm()
+                        }}>
                             Cancel
                         </Button>
                         <Button onClick={handleAddPlayer}>Add Player</Button>
@@ -316,15 +360,6 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                                 id="edit-player-name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="edit-player-number">Jersey Number</Label>
-                            <Input
-                                id="edit-player-number"
-                                type="number"
-                                value={formData.number}
-                                onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                             />
                         </div>
                         <div className="grid gap-2">
@@ -372,9 +407,42 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="player-team">Photo</Label>
+                            <div className="flex flex-col gap-2">
+                                <Input
+                                    id="team-photo"
+                                    type="file"
+                                    accept="image/*"
+                                    ref={fileRef}
+                                    onChange={handleFileChange}
+                                />
+                                {photoPreview && (
+                                    <div className="mt-2 max-w-xs">
+                                        {photoPreview.startsWith('blob:') ? (
+                                            <img
+                                                src={photoPreview}
+                                                alt="New preview"
+                                                className="rounded-md max-h-32 object-cover"
+                                            />
+                                        ) : (
+                                            <img
+                                                src={`/storage/${photoPreview}`}
+                                                alt="Current photo"
+                                                className="rounded-md max-h-32 object-cover"
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditPlayerOpen(false)}>
+                        <Button variant="outline" onClick={() => {
+                            setIsAddPlayerOpen(false)
+                            setPhotoPreview(null)
+                            resetForm()
+                        }}>
                             Cancel
                         </Button>
                         <Button onClick={handleEditPlayer}>Save Changes</Button>
