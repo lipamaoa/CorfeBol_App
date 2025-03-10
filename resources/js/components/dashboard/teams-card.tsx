@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { router } from "@inertiajs/react"
 import { Edit, MoreHorizontal, PlusCircle, Trash2, Users } from "lucide-react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 
 interface Team {
     id: number
@@ -41,6 +41,12 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
         photo: null as File | null,
     })
 
+    const [teamsApi, setTeams] = useState(teams);
+    useEffect(() => {
+        setTeams(teams);
+    }, [teams]);
+    // console.log(teamsApi)
+
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
 
@@ -55,47 +61,99 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
         }
     }
 
-    const handleAddTeam = () => {
-        const data = new FormData()
-        data.append('name', formData.name)
-        if (formData.photo) data.append('photo', formData.photo)
+    const handleAddTeam = async () => {
 
-        router.post("/teams", data, {
-            onSuccess: () => {
-                setIsAddTeamOpen(false)
-                setFormData({ name: "", photo: null })
-                setPhotoPreview(null)
-            },
-        })
+        try {
+
+            const data = new FormData();
+            data.append('name', formData.name);
+
+            if (formData.photo) data.append('photo', formData.photo);
+
+            const response = await fetch("api/teams", {
+                method: 'POST',
+                body: data
+            });
+
+            if (!response.ok) {
+                throw new Error('Error Server: ' + response.status);
+            }
+
+            const teamData = await response.json();
+            // Atualizamos teams
+            setTeams(teamData);
+
+            setIsAddTeamOpen(false);
+            setFormData({ name: "", photo: null });
+            setPhotoPreview(null);
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }
 
-    const handleEditTeam = () => {
+    const handleEditTeam = async () => {
         if (!selectedTeam) return
-        const data = new FormData()
-        data.append('name', formData.name)
-        data.append('_method', 'PUT')
-        if (formData.photo) data.append('photo', formData.photo)
 
+        try {
+            const data = new FormData();
+            data.append('name', formData.name);
+            data.append('_method', 'PUT');
 
-        router.post(`/teams/${selectedTeam.id}`, data, {
-            onSuccess: () => {
-                setIsEditTeamOpen(false)
-                setSelectedTeam(null)
-                setPhotoPreview(null)
-            },
-        })
-        // alert("aqui")
+            if (formData.photo) data.append('photo', formData.photo);
+
+            // Enviar a solicitação para a API
+            const response = await fetch(`/api/teams/${selectedTeam.id}`, {
+                method: 'POST',
+                body: data,
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro no servidor: ' + response.status);
+            }
+
+            const updatedTeam = await response.json(); // Obter os dados da equipa atualizada
+
+            // Atualizar o estado de teamsApi com a equipa editada
+            setTeams(prevTeams =>
+                prevTeams.map(team =>
+                    team.id === updatedTeam.id ? updatedTeam : team
+                )
+            );
+
+            // Fechar o modal e resetar o estado
+            setIsEditTeamOpen(false);
+            setSelectedTeam(null);
+            setPhotoPreview(null);
+        } catch (error) {
+            console.error('Erro:', error);
+        }
     }
 
-    const handleDeleteTeam = () => {
+    const handleDeleteTeam = async () => {
         if (!selectedTeam) return
 
-        router.delete(`/teams/${selectedTeam.id}`, {
-            onSuccess: () => {
-                setIsDeleteTeamOpen(false)
-                setSelectedTeam(null)
-            },
-        })
+        try {
+            // Enviar a solicitação para a API
+            const response = await fetch(`/api/teams/${selectedTeam.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro no servidor: ' + response.status);
+            }
+
+            // Atualizar o estado de teamsApi, removendo a equipa eliminada
+            setTeams(prevTeams =>
+                prevTeams.filter(team => team.id !== selectedTeam.id)
+            );
+
+            // Fechar o modal e resetar o estado
+            setIsDeleteTeamOpen(false);
+            setSelectedTeam(null);
+        } catch (error) {
+            console.error('Erro:', error)
+        }
     }
 
     const openEditDialog = (team: Team) => {
@@ -128,15 +186,14 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
                 </CardHeader>
                 <CardContent className="p-4">
                     <ScrollArea className="h-[400px] pr-4">
-                        {teams.length === 0 ? (
+                        {teamsApi.length === 0 ? (
                             <div className="flex h-full items-center justify-center">
                                 <p className="text-muted-foreground text-sm">No teams added yet</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                {teams.map((team) => (
-                                    <div
-                                        key={team.id}
+                                {teamsApi.map((team) => (
+                                    <div key={team.id}
                                         className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
                                     >
 
@@ -280,10 +337,8 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => {
+                    <Button variant="outline" onClick={() => {
                             setIsAddTeamOpen(false)
-                            setIsAddTeamOpen(false)
-                            setPhotoPreview(null)
                         }}>
                             Cancel
                         </Button>
