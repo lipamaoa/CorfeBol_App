@@ -25,12 +25,12 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'main'])->name('dashboard');
 
-    Route::prefix('teams')->controller(TeamController::class)->group(function () {
-        Route::put('/{id}', 'update')->name('teams.update');
-        Route::get('/{id}', 'findById')->name('teams.showid');
-        Route::post('/', 'store')->name('teams.store');
-        Route::delete('/{id}', 'delete')->name('teams.delete');
-    });
+    // Route::prefix('teams')->controller(TeamController::class)->group(function () {
+    //     Route::put('/{id}', 'update')->name('teams.update');
+    //     Route::get('/{id}', 'findById')->name('teams.showid');
+    //     Route::post('/', 'store')->name('teams.store');
+    //     Route::delete('/{id}', 'delete')->name('teams.delete');
+    // });
 
     Route::prefix('players')->controller(PlayerController::class)->group(function () {
         Route::put('/{id}', 'update')->name('players.update');
