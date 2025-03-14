@@ -27,11 +27,11 @@ interface Team {
     games_count: number
 }
 
-interface TeamsCardProps {
-    teams?: Team[]
-}
+// interface TeamsCardProps {
+//     teams?: Team[]
+// }
 
-export default function TeamsCard({ teams = [] }: TeamsCardProps) {
+export default function TeamsCard() {
     const [isAddTeamOpen, setIsAddTeamOpen] = useState(false)
     const [isEditTeamOpen, setIsEditTeamOpen] = useState(false)
     const [isDeleteTeamOpen, setIsDeleteTeamOpen] = useState(false)
@@ -41,11 +41,11 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
         photo: null as File | null,
     })
 
-    const [teamsApi, setTeams] = useState(teams);
+    const [teams, setTeams] = useState<Team[]>([]);
     useEffect(() => {
-        setTeams(teams);
-    }, [teams]);
-    // console.log(teamsApi)
+        handleIndex();
+    }, []);
+    // console.log(teams)
 
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
@@ -58,6 +58,27 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
 
             const objectUrl = URL.createObjectURL(file)
             setPhotoPreview(objectUrl)
+        }
+    }
+
+    const handleIndex = async () => {
+        try {
+
+            const response = await fetch("api/teams", {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error('Error Server: ' + response.status);
+            }
+
+            const teamData = await response.json();
+            // console.log(teamData)
+
+            // Atualizamos teams
+            setTeams(teamData);
+        } catch (error) {
+            console.error('Error:', error);
         }
     }
 
@@ -114,7 +135,7 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
 
             const updatedTeam = await response.json(); // Obter os dados da equipa atualizada
 
-            // Atualizar o estado de teamsApi com a equipa editada
+            // Atualizar o estado de teams com a equipa editada
             setTeams(prevTeams =>
                 prevTeams.map(team =>
                     team.id === updatedTeam.id ? updatedTeam : team
@@ -143,7 +164,7 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
                 throw new Error('Erro no servidor: ' + response.status);
             }
 
-            // Atualizar o estado de teamsApi, removendo a equipa eliminada
+            // Atualizar o estado de teams, removendo a equipa eliminada
             setTeams(prevTeams =>
                 prevTeams.filter(team => team.id !== selectedTeam.id)
             );
@@ -186,13 +207,13 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
                 </CardHeader>
                 <CardContent className="p-4">
                     <ScrollArea className="h-[400px] pr-4">
-                        {teamsApi.length === 0 ? (
+                        {teams.length === 0 ? (
                             <div className="flex h-full items-center justify-center">
                                 <p className="text-muted-foreground text-sm">No teams added yet</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                {teamsApi.map((team) => (
+                                {teams.map((team) => (
                                     <div key={team.id}
                                         className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
                                     >
@@ -337,8 +358,10 @@ export default function TeamsCard({ teams = [] }: TeamsCardProps) {
                         </div>
                     </div>
                     <DialogFooter>
-                    <Button variant="outline" onClick={() => {
-                            setIsAddTeamOpen(false)
+                        <Button variant="outline" onClick={() => {
+                            setIsEditTeamOpen(false)
+                            setPhotoPreview(null)
+                            setFormData({ name: "", photo: null })
                         }}>
                             Cancel
                         </Button>
