@@ -71,22 +71,22 @@ export default function Create() {
     const [isDeleteGameOpen, setIsDeleteGameOpen] = useState(false)
 
     const [teams, setTeams] = useState<Team[]>([]);
-    useEffect(()=>{
+    useEffect(() => {
         handleTeams();
     }, [])
 
-    const[games, setGames] = useState<Game[]>([]);
-    useEffect(()=>{
+    const [games, setGames] = useState<Game[]>([]);
+    useEffect(() => {
         handleIndex();
     }, [])
 
-    const handleTeams = async ()=>{
+    const handleTeams = async () => {
         try {
-            const response = await fetch("api/teams",{
+            const response = await fetch("/api/teams", {
                 method: 'GET',
             });
 
-            if(!response.ok){
+            if (!response.ok) {
                 throw new Error('Error server: ' + response.status);
             }
 
@@ -98,13 +98,13 @@ export default function Create() {
         }
     }
 
-    const handleIndex = async ()=>{
+    const handleIndex = async () => {
         try {
-            const response = await fetch("api/games",{
+            const response = await fetch("/api/games", {
                 method: 'GET',
             });
 
-            if(!response.ok){
+            if (!response.ok) {
                 throw new Error('Error server: ' + response.status);
             }
 
@@ -121,17 +121,18 @@ export default function Create() {
 
         try {
             const data = new FormData();
-            data.append('teamA', formData.team_a_id)
-            data.append('teamB', formData.team_b_id)
+            data.append('team_a_id', formData.team_a_id)
+            data.append('team_b_id', formData.team_b_id)
             data.append('date', formData.date.toISOString())
             data.append('location', formData.location)
 
             //Criar um novo jogo na API
-            const response = await fetch("api/games", {
-                method: 'POST'
+            const response = await fetch("/api/games", {
+                method: 'POST',
+                body: data
             })
 
-            if(!response.ok) {
+            if (!response.ok) {
                 throw new Error('Error Server: ' + response.status)
             }
 
@@ -164,7 +165,7 @@ export default function Create() {
                 body: data
             })
 
-            if(!response.ok) {
+            if (!response.ok) {
                 throw new Error('Error Server: ' + response.status)
             }
 
@@ -191,7 +192,7 @@ export default function Create() {
                 method: 'DELETE'
             })
 
-            if(!response.ok) {
+            if (!response.ok) {
                 throw new Error('Error Server: ' + response.status)
             }
 
