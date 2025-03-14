@@ -41,7 +41,7 @@ export default function TeamsCard() {
         photo: null as File | null,
     })
 
-    const [teams, setTeams] = useState<Team[]>([]);
+    const [teams, setTeams] = useState<Team[]>([]); 
     useEffect(() => {
         handleIndex();
     }, []);
