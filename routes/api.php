@@ -9,3 +9,5 @@ use Illuminate\Support\Facades\Route;
 // })->middleware('auth:sanctum');
 
 Route::apiResource('/teams', TeamAPIController::class);
+
+Route::apiResource('/games', GameAPIController::class);
