@@ -41,6 +41,7 @@ export default function TeamsCard() {
         photo: null as File | null,
     })
 
+
     const [teams, setTeams] = useState<Team[]>([]); 
     useEffect(() => {
         handleIndex();
@@ -207,7 +208,7 @@ export default function TeamsCard() {
                 </CardHeader>
                 <CardContent className="p-4">
                     <ScrollArea className="h-[400px] pr-4">
-                        {teams.length === 0 ? (
+                        {teamsApi.length === 0 ? (
                             <div className="flex h-full items-center justify-center">
                                 <p className="text-muted-foreground text-sm">No teams added yet</p>
                             </div>
