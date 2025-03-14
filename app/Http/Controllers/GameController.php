@@ -12,9 +12,9 @@ class GameController extends Controller
 
     public function create()
     {
-        $games = Game::with(['teamA', 'teamB'])->get();
+        // $games = Game::with(['teamA', 'teamB'])->get();
 
-        return Inertia::render('games.create', ['game' => $games]);
+        return Inertia::render('games.create');
     }
 
 

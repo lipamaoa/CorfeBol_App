@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Game;
 use Illuminate\Http\Request;
 
 class GameApiController extends Controller
@@ -12,7 +13,6 @@ class GameApiController extends Controller
     public function index()
     {
         $games = Game::with(['teamA', 'teamB'])->get();
-
         return response()->json($games);
     }
 
@@ -21,15 +21,14 @@ class GameApiController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request);
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
             'date' => 'required|date',
             'location' => 'nullable|string|max:255',
-            'status' => 'string|max:50',
         ]);
 
+        // dd($request);
         Game::create([
             'team_a_id' => $request->team_a_id,
             'team_b_id' => $request->team_b_id,
@@ -37,9 +36,9 @@ class GameApiController extends Controller
             'location' => $request->location
         ]);
 
-        $games = Game::all();
+        $games = Game::with(['teamA', 'teamB'])->get();
 
-        return response()->json($games);
+        return response()->json($games, 201);
     }
 
     /**

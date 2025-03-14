@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PlayerAPIController;
 use App\Http\Controllers\TeamAPIController;
+use App\Http\Controllers\GameApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
