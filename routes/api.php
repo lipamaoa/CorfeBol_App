@@ -11,3 +11,4 @@ use Illuminate\Support\Facades\Route;
 
 Route::apiResource('/teams', TeamAPIController::class);
 Route::apiResource('/players', PlayerAPIController::class);
+Route::apiResource('/games', GameAPIController::class);

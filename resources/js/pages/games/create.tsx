@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { DatePicker } from '@/components/datePicker';
 import { Badge } from '@/components/ui/badge';
@@ -49,12 +49,12 @@ interface FormData {
     location: string;
 }
 
-interface CreateProps {
-    games?: Game[];
-    teams?: Team[];
-}
+//interface CreateProps {
+//    games?: Game[];
+//    teams?: Team[];
+//}
 
-export default function Create({ games, teams }: CreateProps) {
+export default function Create() {
     const [date, setDate] = useState<Date>(new Date());
     const [formData, setFormData] = useState({
         team_a_id: '',
@@ -70,40 +70,141 @@ export default function Create({ games, teams }: CreateProps) {
     const [isEditGameOpen, setIsEditGameOpen] = useState(false)
     const [isDeleteGameOpen, setIsDeleteGameOpen] = useState(false)
 
+    const [teams, setTeams] = useState<Team[]>([]);
+    useEffect(()=>{
+        handleTeams();
+    }, [])
 
-    const handleAddGame = () => {
-        router.post("/games", formData, {
-            onSuccess: () => {
-                setFormData({
-                    team_a_id: '',
-                    team_b_id: '',
-                    date: date,
-                    location: ''
-                })
-            },
-        })
+    const[games, setGames] = useState<Game[]>([]);
+    useEffect(()=>{
+        handleIndex();
+    }, [])
+
+    const handleTeams = async ()=>{
+        try {
+            const response = await fetch("api/teams",{
+                method: 'GET',
+            });
+
+            if(!response.ok){
+                throw new Error('Error server: ' + response.status);
+            }
+
+            const teamData = await response.json();
+
+            setTeams(teamData);
+        } catch (error) {
+            console.error('Error: ', error)
+        }
     }
 
-    const handleEditGame = () => {
-        if (!selectedGame) return
+    const handleIndex = async ()=>{
+        try {
+            const response = await fetch("api/games",{
+                method: 'GET',
+            });
 
-        router.put(`/games/${selectedGame.id}`, formData, {
-            onSuccess: () => {
-                setIsEditGameOpen(false)
-                setSelectedGame(null)
-            },
-        })
+            if(!response.ok){
+                throw new Error('Error server: ' + response.status);
+            }
+
+            const gameData = await response.json();
+
+            setGames(gameData);
+        } catch (error) {
+            console.error('Error: ', error)
+        }
     }
 
-    const handleDeleteGame = () => {
+
+    const handleAddGame = async () => {
+
+        try {
+            const data = new FormData();
+            data.append('teamA', formData.team_a_id)
+            data.append('teamB', formData.team_b_id)
+            data.append('date', formData.date.toISOString())
+            data.append('location', formData.location)
+
+            //Criar um novo jogo na API
+            const response = await fetch("api/games", {
+                method: 'POST'
+            })
+
+            if(!response.ok) {
+                throw new Error('Error Server: ' + response.status)
+            }
+
+            //Obter os dados do jogo
+            const gameData = await response.json();
+            setGames(gameData)
+
+            //Fechar o dialog
+            setFormData({ team_a_id: '', team_b_id: '', date: date, location: '' });
+
+        } catch (error) {
+            console.error('Error: ', error)
+        }
+    }
+
+    const handleEditGame = async () => {
         if (!selectedGame) return
 
-        router.delete(`/games/${selectedGame.id}`, {
-            onSuccess: () => {
-                setIsDeleteGameOpen(false)
-                setSelectedGame(null)
-            },
-        })
+        try {
+            const data = new FormData();
+            data.append('teamA', formData.team_a_id)
+            data.append('teamB', formData.team_b_id)
+            data.append('date', formData.date.toISOString())
+            data.append('location', formData.location)
+            data.append('_method', 'PUT')
+
+            //Enviar solicitação para a API
+            const response = await fetch(`/api/games/${selectedGame.id}`, {
+                method: 'POST',
+                body: data
+            })
+
+            if(!response.ok) {
+                throw new Error('Error Server: ' + response.status)
+            }
+
+            //Obter os dados do jogo atualizado
+            const updatedGame = await response.json();
+
+            //Atualizar o estado de games
+            setGames(games.map(game => game.id === updatedGame.id ? updatedGame : game))
+
+            //Fechar o dialog
+            setFormData({ team_a_id: '', team_b_id: '', date: date, location: '' });
+
+        } catch (error) {
+            console.error('Error: ', error)
+        }
+    }
+
+    const handleDeleteGame = async () => {
+        if (!selectedGame) return
+
+        try {
+            //Enviar solicitação para a API
+            const response = await fetch(`/api/games/${selectedGame.id}`, {
+                method: 'DELETE'
+            })
+
+            if(!response.ok) {
+                throw new Error('Error Server: ' + response.status)
+            }
+
+            //Atualizar o estado de games, removendo o game deletado
+            setGames(games.filter(game => game.id !== selectedGame.id));
+
+            //Fechar o dialog
+            setIsDeleteGameOpen(false)
+            setSelectedGame(null)
+
+        } catch (error) {
+            console.error('Error: ', error)
+        }
     }
 
     const openEditDialog = (game: Game) => {
@@ -436,7 +537,7 @@ export default function Create({ games, teams }: CreateProps) {
                                                 onDateChange={(newDate) => {
                                                     if (newDate) {
                                                         setDate(newDate);
-                                                        setFormData({ ...formData, date: format(newDate, 'yyyy-MM-dd') });
+                                                        setFormData({ ...formData, date: newDate });
                                                     }
                                                 }}
                                             />
