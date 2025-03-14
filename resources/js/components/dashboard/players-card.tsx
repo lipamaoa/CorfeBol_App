@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { router } from "@inertiajs/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,30 +28,37 @@ interface Team {
 interface Player {
     id: number
     name: string
-    position: "attack" | "defense"
     gender: "male" | "female"
     team_id: number
     team_name: string
     photo?: string
 }
 
-interface PlayersCardProps {
-    players?: Player[]
-    teams?: Team[]
-}
+// interface PlayersCardProps {
+//     players?: Player[]
+//     teams?: Team[]
+// }
 
-export default function PlayersCard({ players = [], teams = [] }: PlayersCardProps) {
+export default function PlayersCard() {
     const [isAddPlayerOpen, setIsAddPlayerOpen] = useState(false)
     const [isEditPlayerOpen, setIsEditPlayerOpen] = useState(false)
     const [isDeletePlayerOpen, setIsDeletePlayerOpen] = useState(false)
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
     const [formData, setFormData] = useState({
         name: "",
-        position: "attack",
         gender: "male",
         team_id: "",
         photo: null as File | null,
     })
+
+    const [players, setPlayers] = useState<Player[]>([]);
+    useEffect(() => {
+        handleIndex();
+    }, []);
+    const [teams, setTeams] = useState<Team[]>([]);
+    useEffect(() => {
+        handleTeam();
+    }, []);
 
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
@@ -66,65 +73,149 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
             setPhotoPreview(objectUrl)
         }
     }
+    const handleIndex = async () => {
+        try {
 
-    const handleAddPlayer = () => {
-        const data = new FormData()
-        data.append('name', formData.name)
-        data.append('position', formData.position)
-        data.append('gender', formData.gender)
-        data.append('team_id', formData.team_id)
-        if (formData.photo) data.append('photo', formData.photo)
+            const response = await fetch("api/players", {
+                method: 'GET',
+            });
 
-        router.post("/players", data, {
-            onSuccess: () => {
-                setIsAddPlayerOpen(false)
-                resetForm()
-            },
-            preserveScroll: true,
-        },
-        )
+            if (!response.ok) {
+                throw new Error('Error Server: ' + response.status);
+            }
+
+            const playerData = await response.json();
+            // console.log(playerData)
+            setPlayers(playerData);
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    const handleTeam = async () => {
+        try {
+
+            const response = await fetch("api/teams", {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error('Error Server: ' + response.status);
+            }
+
+            const teamData = await response.json();
+            // console.log(teamData)
+
+            // Atualizamos teams
+            setTeams(teamData);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    const handleAddPlayer = async () => {
+
+        try {
+            const data = new FormData()
+            data.append('name', formData.name)
+            // data.append('position', formData.position)
+            data.append('gender', formData.gender)
+            data.append('team_id', formData.team_id)
+
+            if (formData.photo) data.append('photo', formData.photo)
+
+            // Petição API
+            const response = await fetch("api/players", {
+                method: 'POST',
+                body: data
+            });
+
+            if (!response.ok) {
+                throw new Error('Error Server: ' + response.status);
+            }
+
+            const playerData = await response.json();
+            // console.log(teamData)
+            setPlayers(playerData);
+
+            setIsAddPlayerOpen(false)
+            resetForm()
+            setPhotoPreview(null)
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }
 
-    const handleEditPlayer = () => {
+    const handleEditPlayer = async () => {
         if (!selectedPlayer) return
 
-        const data = new FormData()
-        data.append('name', formData.name)
-        data.append('position', formData.position)
-        data.append('gender', formData.gender)
-        data.append('team_id', formData.team_id)
-        data.append('_method', 'PUT')
-        if (formData.photo) data.append('photo', formData.photo)
+        try {
 
-        router.post(`/players/${selectedPlayer.id}`, data,
-            {
-                onSuccess: () => {
-                    setIsEditPlayerOpen(false)
-                    setSelectedPlayer(null)
-                    setPhotoPreview(null)
-                },
-                preserveScroll: true,
-            },
-        )
+            const data = new FormData()
+            data.append('name', formData.name)
+            // data.append('position', formData.position)
+            data.append('gender', formData.gender)
+            data.append('team_id', formData.team_id)
+            data.append('_method', 'PUT')
+
+            if (formData.photo) data.append('photo', formData.photo)
+
+            // Petição API
+            const response = await fetch(`api/players/${selectedPlayer.id}`, {
+                method: 'POST',
+                body: data
+            });
+
+            if (!response.ok) {
+                throw new Error('Error Server: ' + response.status);
+            }
+
+            const updatePlayer = await response.json();
+
+            setPlayers(prevPlayers =>
+                prevPlayers.map(player =>
+                    player.id === updatePlayer.id ? updatePlayer : player
+                )
+            )
+
+            setIsEditPlayerOpen(false)
+            setSelectedPlayer(null)
+            setPhotoPreview(null)
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }
 
-    const handleDeletePlayer = () => {
+    const handleDeletePlayer = async () => {
         if (!selectedPlayer) return
 
-        router.delete(`/players/${selectedPlayer.id}`, {
-            onSuccess: () => {
-                setIsDeletePlayerOpen(false)
-                setSelectedPlayer(null)
-            },
-            preserveScroll: true,
-        })
+        try {
+            // Petição API
+            const response = await fetch(`api/players/${selectedPlayer.id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                throw new Error('Error Server: ' + response.status);
+            }
+
+            setPlayers(prevPlayers =>
+                prevPlayers.filter(player => player.id !== selectedPlayer.id)
+            )
+
+            setIsDeletePlayerOpen(false)
+            setSelectedPlayer(null)
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }
 
     const openEditDialog = (player: Player) => {
         setSelectedPlayer(player)
         setFormData({
             name: player.name,
-            position: player.position,
             gender: player.gender,
             team_id: player.team_id.toString(),
             photo: null,
@@ -141,7 +232,6 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
     const resetForm = () => {
         setFormData({
             name: "",
-            position: "attack",
             gender: "male",
             team_id: "",
             photo: null,
@@ -149,17 +239,17 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
         setPhotoPreview(null)
     }
 
-    const getPositionBadge = (position: string) => {
-        return position === "attack" ? (
-            <Badge variant="outline" className="bg-green-50">
-                Attack
-            </Badge>
-        ) : (
-            <Badge variant="outline" className="bg-blue-50">
-                Defense
-            </Badge>
-        )
-    }
+    // const getPositionBadge = (position: string) => {
+    //     return position === "attack" ? (
+    //         <Badge variant="outline" className="bg-green-50">
+    //             Attack
+    //         </Badge>
+    //     ) : (
+    //         <Badge variant="outline" className="bg-blue-50">
+    //             Defense
+    //         </Badge>
+    //     )
+    // }
 
     const getGenderBadge = (gender: string) => {
         return gender === "male" ? (
@@ -218,7 +308,7 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                                             <div>
                                                 <h3 className="font-medium">{player.name}</h3>
                                                 <div className="flex gap-1 text-xs">
-                                                    {getPositionBadge(player.position)}
+                                                    {/* {getPositionBadge(player.position)} */}
                                                     {getGenderBadge(player.gender)}
                                                     <span className="text-muted-foreground">{player.team_name}</span>
                                                 </div>
@@ -265,21 +355,6 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="player-position">Position</Label>
-                            <Select
-                                value={formData.position}
-                                onValueChange={(value) => setFormData({ ...formData, position: value as "attack" | "defense" })}
-                            >
-                                <SelectTrigger id="player-position">
-                                    <SelectValue placeholder="Select position" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="attack">Attack</SelectItem>
-                                    <SelectItem value="defense">Defense</SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="player-gender">Gender</Label>
@@ -363,21 +438,6 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="edit-player-position">Position</Label>
-                            <Select
-                                value={formData.position}
-                                onValueChange={(value) => setFormData({ ...formData, position: value as "attack" | "defense" })}
-                            >
-                                <SelectTrigger id="edit-player-position">
-                                    <SelectValue placeholder="Select position" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="attack">Attack</SelectItem>
-                                    <SelectItem value="defense">Defense</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
                             <Label htmlFor="edit-player-gender">Gender</Label>
                             <Select
                                 value={formData.gender}
@@ -439,8 +499,7 @@ export default function PlayersCard({ players = [], teams = [] }: PlayersCardPro
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => {
-                            setIsAddPlayerOpen(false)
-                            setPhotoPreview(null)
+                            setIsEditPlayerOpen(false)
                             resetForm()
                         }}>
                             Cancel
