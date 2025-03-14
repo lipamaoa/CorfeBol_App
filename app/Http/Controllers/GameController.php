@@ -57,7 +57,7 @@ class GameController extends Controller
             'location' => $request->location
         ]);
 
-        return redirect()->route('games.create')->with('message', 'Game added to schedule!');
+        return redirect()->back()->with('message', 'Game added to schedule!');
     }
 
     public function update(Request $request, $id)

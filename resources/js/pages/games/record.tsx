@@ -824,10 +824,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                                     { top: "70%", left: "20%" }, // Bottom-left
                                     { top: "70%", left: "60%" }, // Bottom-right
                                   ]
-                                  console.log("All Players:", players)
-console.log("Attack Players:", getAttackPlayers())
-console.log("Defense Players:", getDefensePlayers())
-console.log("Substitutes:", getSubstitutes())
+                                 
 
 
                                   return (

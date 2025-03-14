@@ -4,13 +4,14 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\GameRecordController;
 use App\Http\Controllers\StatController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ActionController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\GameRecordController;
+
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -52,8 +53,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Game recording routes
     Route::get('/games', [GameRecordController::class, 'record'])->name('games.show');
-    Route::get('/games/record/{id}', [GameRecordController::class, 'show'])->name('games.record');
-    Route::post('/games/end/{id}', [GameRecordController::class, 'endGame'])->name('games.end');
+    Route::get('/games/{id}/record', [GameRecordController::class, 'show'])->name('games.record');
+    Route::post('/games/{id}/end', [GameRecordController::class, 'endGame'])->name('games.end');
 });
 
 
