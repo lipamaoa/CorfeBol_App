@@ -32,12 +32,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //     Route::delete('/{id}', 'delete')->name('teams.delete');
     // });
 
-    Route::prefix('players')->controller(PlayerController::class)->group(function () {
-        Route::put('/{id}', 'update')->name('players.update');
-        Route::get('/{id}', 'findById')->name('players.showid');
-        Route::post('/', 'store')->name('players.store');
-        Route::delete('/{id}', 'delete')->name('players.delete');
-    });
+    // Route::prefix('players')->controller(PlayerController::class)->group(function () {
+    //     Route::put('/{id}', 'update')->name('players.update');
+    //     Route::get('/{id}', 'findById')->name('players.showid');
+    //     Route::post('/', 'store')->name('players.store');
+    //     Route::delete('/{id}', 'delete')->name('players.delete');
+    // });
 
     // Route::get('/games/create', function () {
     //     return Inertia::render('games/create');

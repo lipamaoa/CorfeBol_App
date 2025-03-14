@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PlayerAPIController;
 use App\Http\Controllers\TeamAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -9,3 +10,4 @@ use Illuminate\Support\Facades\Route;
 // })->middleware('auth:sanctum');
 
 Route::apiResource('/teams', TeamAPIController::class);
+Route::apiResource('/players', PlayerAPIController::class);
