@@ -1,7 +1,8 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef, useEffect } from "react"
-import { router } from "@inertiajs/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -34,156 +35,149 @@ interface Player {
     photo?: string
 }
 
-// interface PlayersCardProps {
-//     players?: Player[]
-//     teams?: Team[]
-// }
+interface FormData {
+    name: string
+    gender: "male" | "female"
+    team_id: string
+    photo: File | null
+}
 
 export default function PlayersCard() {
     const [isAddPlayerOpen, setIsAddPlayerOpen] = useState(false)
     const [isEditPlayerOpen, setIsEditPlayerOpen] = useState(false)
     const [isDeletePlayerOpen, setIsDeletePlayerOpen] = useState(false)
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         name: "",
         gender: "male",
         team_id: "",
-        photo: null as File | null,
+        photo: null,
     })
 
-    const [players, setPlayers] = useState<Player[]>([]);
-    useEffect(() => {
-        handleIndex();
-    }, []);
-    const [teams, setTeams] = useState<Team[]>([]);
-    useEffect(() => {
-        handleTeam();
-    }, []);
+    const [players, setPlayers] = useState<Player[]>([])
+    const [teams, setTeams] = useState<Team[]>([])
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
 
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
+
+    // Fetch players and teams data
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [playersResponse, teamsResponse] = await Promise.all([
+                    fetch("api/players", { method: "GET" }),
+                    fetch("api/teams", { method: "GET" }),
+                ])
+
+                if (!playersResponse.ok) {
+                    throw new Error("Error players: " + playersResponse.status)
+                }
+                if (!teamsResponse.ok) {
+                    throw new Error("Error teams: " + teamsResponse.status)
+                }
+
+                const playerData = await playersResponse.json()
+                const teamData = await teamsResponse.json()
+
+                setPlayers(playerData)
+                setTeams(teamData)
+            } catch (error) {
+                console.error("Error fetching data:", error)
+            }
+        }
+
+        fetchData()
+    }, [])
+
+    const validateForm = (): boolean => {
+        const errors: { [key: string]: string } = {}
+
+        if (!formData.name.trim()) {
+            errors.name = "Player name is required"
+        }
+
+        if (!formData.team_id) {
+            errors.team_id = "Team selection is required"
+        }
+
+        setFormErrors(errors)
+        return Object.keys(errors).length === 0
+    }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null
 
         if (file) {
-            setFormData(prev => ({ ...prev, photo: file }))
+            setFormData((prev) => ({ ...prev, photo: file }))
 
             const objectUrl = URL.createObjectURL(file)
             setPhotoPreview(objectUrl)
         }
     }
-    const handleIndex = async () => {
-        try {
 
-            const response = await fetch("api/players", {
-                method: 'GET',
-            });
-
-            if (!response.ok) {
-                throw new Error('Error Server: ' + response.status);
-            }
-
-            const playerData = await response.json();
-            // console.log(playerData)
-            setPlayers(playerData);
-
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    }
-    const handleTeam = async () => {
-        try {
-
-            const response = await fetch("api/teams", {
-                method: 'GET',
-            });
-
-            if (!response.ok) {
-                throw new Error('Error Server: ' + response.status);
-            }
-
-            const teamData = await response.json();
-            // console.log(teamData)
-
-            // Atualizamos teams
-            setTeams(teamData);
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    }
     const handleAddPlayer = async () => {
+        if (!validateForm()) return
 
         try {
             const data = new FormData()
-            data.append('name', formData.name)
-            // data.append('position', formData.position)
-            data.append('gender', formData.gender)
-            data.append('team_id', formData.team_id)
+            data.append("name", formData.name)
+            data.append("gender", formData.gender)
+            data.append("team_id", formData.team_id)
 
-            if (formData.photo) data.append('photo', formData.photo)
+            if (formData.photo) data.append("photo", formData.photo)
 
-            // Petição API
             const response = await fetch("api/players", {
-                method: 'POST',
-                body: data
-            });
+                method: "POST",
+                body: data,
+            })
 
             if (!response.ok) {
-                throw new Error('Error Server: ' + response.status);
+                throw new Error(`Failed to add player: ${response.status}`)
             }
 
-            const playerData = await response.json();
-            // console.log(teamData)
-            setPlayers(playerData);
+            const playerData = await response.json()
+            setPlayers(playerData)
 
             setIsAddPlayerOpen(false)
             resetForm()
             setPhotoPreview(null)
-
-        } catch (error) {
-            console.error('Error:', error);
+        } catch (error: any) {
+            console.error("Error adding player:", error)
         }
     }
 
     const handleEditPlayer = async () => {
-        if (!selectedPlayer) return
+        if (!selectedPlayer || !validateForm()) return
 
         try {
-
             const data = new FormData()
-            data.append('name', formData.name)
-            // data.append('position', formData.position)
-            data.append('gender', formData.gender)
-            data.append('team_id', formData.team_id)
-            data.append('_method', 'PUT')
+            data.append("name", formData.name)
+            data.append("gender", formData.gender)
+            data.append("team_id", formData.team_id)
+            data.append("_method", "PUT")
 
-            if (formData.photo) data.append('photo', formData.photo)
+            if (formData.photo) data.append("photo", formData.photo)
 
             // Petição API
             const response = await fetch(`api/players/${selectedPlayer.id}`, {
-                method: 'POST',
-                body: data
-            });
+                method: "POST",
+                body: data,
+            })
 
             if (!response.ok) {
-                throw new Error('Error Server: ' + response.status);
+                throw new Error("Error Server: " + response.status)
             }
 
-            const updatePlayer = await response.json();
+            const updatePlayer = await response.json()
 
-            setPlayers(prevPlayers =>
-                prevPlayers.map(player =>
-                    player.id === updatePlayer.id ? updatePlayer : player
-                )
-            )
+            setPlayers((prevPlayers) => prevPlayers.map((player) => (player.id === updatePlayer.id ? updatePlayer : player)))
 
             setIsEditPlayerOpen(false)
             setSelectedPlayer(null)
             setPhotoPreview(null)
-
-        } catch (error) {
-            console.error('Error:', error);
+        } catch (error: any) {
+            console.error("Error:", error)
         }
     }
 
@@ -193,22 +187,19 @@ export default function PlayersCard() {
         try {
             // Petição API
             const response = await fetch(`api/players/${selectedPlayer.id}`, {
-                method: 'DELETE',
-            });
+                method: "DELETE",
+            })
 
             if (!response.ok) {
-                throw new Error('Error Server: ' + response.status);
+                throw new Error("Error Server: " + response.status)
             }
 
-            setPlayers(prevPlayers =>
-                prevPlayers.filter(player => player.id !== selectedPlayer.id)
-            )
+            setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== selectedPlayer.id))
 
             setIsDeletePlayerOpen(false)
             setSelectedPlayer(null)
-
-        } catch (error) {
-            console.error('Error:', error);
+        } catch (error: any) {
+            console.error("Error:", error)
         }
     }
 
@@ -217,7 +208,7 @@ export default function PlayersCard() {
         setFormData({
             name: player.name,
             gender: player.gender,
-            team_id: player.team_id.toString(),
+            team_id: player.team_id ? player.team_id.toString() : '',
             photo: null,
         })
         setPhotoPreview(player.photo || null)
@@ -237,19 +228,11 @@ export default function PlayersCard() {
             photo: null,
         })
         setPhotoPreview(null)
+        setFormErrors({})
+        if (fileRef.current) {
+            fileRef.current.value = ""
+        }
     }
-
-    // const getPositionBadge = (position: string) => {
-    //     return position === "attack" ? (
-    //         <Badge variant="outline" className="bg-green-50">
-    //             Attack
-    //         </Badge>
-    //     ) : (
-    //         <Badge variant="outline" className="bg-blue-50">
-    //             Defense
-    //         </Badge>
-    //     )
-    // }
 
     const getGenderBadge = (gender: string) => {
         return gender === "male" ? (
@@ -290,7 +273,7 @@ export default function PlayersCard() {
                                         className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
                                     >
                                         <div className="flex items-center gap-2">
-                                            {player.photo && (
+                                            {player.photo ? (
                                                 <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
                                                     <img
                                                         src={`/storage/${player.photo}`}
@@ -298,13 +281,14 @@ export default function PlayersCard() {
                                                         className="h-full w-full object-cover"
                                                     />
                                                 </div>
+                                            ) : (
+                                                <div
+                                                    className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold ${player.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}
+                                                >
+                                                    {player.name.charAt(0).toUpperCase()}
+                                                </div>
                                             )}
-                                            <div
-                                                className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold ${player.gender === "male" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"
-                                                    }`}
-                                            >
-                                                {/* {player.number} */}
-                                            </div>
+                                            {/* {player.number} */}
                                             <div>
                                                 <h3 className="font-medium">{player.name}</h3>
                                                 <div className="flex gap-1 text-xs">
@@ -338,10 +322,10 @@ export default function PlayersCard() {
                         )}
                     </ScrollArea>
                 </CardContent>
-            </Card>
+            </Card >
 
             {/* Add Player Dialog */}
-            <Dialog open={isAddPlayerOpen} onOpenChange={setIsAddPlayerOpen}>
+            <Dialog open={isAddPlayerOpen} onOpenChange={setIsAddPlayerOpen} >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add New Player</DialogTitle>
@@ -354,7 +338,9 @@ export default function PlayersCard() {
                                 id="player-name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className={formErrors.name ? "border-red-500" : ""}
                             />
+                            {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="player-gender">Gender</Label>
@@ -385,21 +371,16 @@ export default function PlayersCard() {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {formErrors.team_id && <p className="text-red-500 text-sm">{formErrors.team_id}</p>}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="player-team">Photo</Label>
                             <div className="flex flex-col gap-2">
-                                <Input
-                                    id="team-photo"
-                                    type="file"
-                                    accept="image/*"
-                                    ref={fileRef}
-                                    onChange={handleFileChange}
-                                />
+                                <Input id="team-photo" type="file" accept="image/*" ref={fileRef} onChange={handleFileChange} />
                                 {photoPreview && (
                                     <div className="mt-2 max-w-xs">
                                         <img
-                                            src={photoPreview}
+                                            src={photoPreview || "/placeholder.svg"}
                                             alt="Preview"
                                             className="rounded-md max-h-32 object-cover"
                                         />
@@ -409,20 +390,23 @@ export default function PlayersCard() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => {
-                            setIsAddPlayerOpen(false)
-                            setPhotoPreview(null)
-                            resetForm()
-                        }}>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsAddPlayerOpen(false)
+                                setPhotoPreview(null)
+                                resetForm()
+                            }}
+                        >
                             Cancel
                         </Button>
                         <Button onClick={handleAddPlayer}>Add Player</Button>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
 
             {/* Edit Player Dialog */}
-            <Dialog open={isEditPlayerOpen} onOpenChange={setIsEditPlayerOpen}>
+            <Dialog open={isEditPlayerOpen} onOpenChange={setIsEditPlayerOpen} >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Player</DialogTitle>
@@ -435,7 +419,9 @@ export default function PlayersCard() {
                                 id="edit-player-name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className={formErrors.name ? "border-red-500" : ""}
                             />
+                            {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="edit-player-gender">Gender</Label>
@@ -466,22 +452,17 @@ export default function PlayersCard() {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {formErrors.team_id && <p className="text-red-500 text-sm">{formErrors.team_id}</p>}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="player-team">Photo</Label>
                             <div className="flex flex-col gap-2">
-                                <Input
-                                    id="team-photo"
-                                    type="file"
-                                    accept="image/*"
-                                    ref={fileRef}
-                                    onChange={handleFileChange}
-                                />
+                                <Input id="team-photo" type="file" accept="image/*" ref={fileRef} onChange={handleFileChange} />
                                 {photoPreview && (
                                     <div className="mt-2 max-w-xs">
-                                        {photoPreview.startsWith('blob:') ? (
+                                        {photoPreview.startsWith("blob:") ? (
                                             <img
-                                                src={photoPreview}
+                                                src={photoPreview || "/placeholder.svg"}
                                                 alt="New preview"
                                                 className="rounded-md max-h-32 object-cover"
                                             />
@@ -498,19 +479,22 @@ export default function PlayersCard() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => {
-                            setIsEditPlayerOpen(false)
-                            resetForm()
-                        }}>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsEditPlayerOpen(false)
+                                resetForm()
+                            }}
+                        >
                             Cancel
                         </Button>
                         <Button onClick={handleEditPlayer}>Save Changes</Button>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
 
             {/* Delete Player Confirmation Dialog */}
-            <Dialog open={isDeletePlayerOpen} onOpenChange={setIsDeletePlayerOpen}>
+            <Dialog open={isDeletePlayerOpen} onOpenChange={setIsDeletePlayerOpen} >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete Player</DialogTitle>
@@ -522,12 +506,10 @@ export default function PlayersCard() {
                         <Button variant="outline" onClick={() => setIsDeletePlayerOpen(false)}>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={handleDeletePlayer}>
-                            Delete
-                        </Button>
+                        <Button variant="destructive" onClick={handleDeletePlayer}>Delete</Button>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
         </>
     )
 }
