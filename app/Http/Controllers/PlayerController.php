@@ -12,7 +12,6 @@ class PlayerController extends Controller
     public function show()
     {
         $player = Player::with('team')->get();
-        // dd($player);
         return $player;
     }
 
