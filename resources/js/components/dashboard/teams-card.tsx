@@ -194,74 +194,74 @@ export default function TeamsCard() {
     }
   }
 
-  return (
-    <>
-      <Card className="border shadow-sm h-[500px]">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gray-50 border-b">
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Users className="h-5 w-5 text-gray-500" />
-            Teams
-          </CardTitle>
-          <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Team
-          </Button>
-        </CardHeader>
-        <CardContent className="p-4">
-          <ScrollArea className="h-[400px] pr-4">
-            {teams.length === 0 ? (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground text-sm">No teams added yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {teams.map((team) => (
-                  <div
-                    key={team.id}
-                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {team.photo ? (
-                        <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
-                          <img src={`/storage/${team.photo}`} alt={team.name} className="h-full w-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full font-semibold bg-blue-100 text-blue-700">
-                          {team.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-medium">{team.name}</h3>
-                        <p className="text-muted-foreground text-xs">
-                          {team.players_count} players • {team.games_count} games
-                        </p>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(team)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openDeleteDialog(team)} className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+    return (
+        <>
+            <Card className="border shadow-sm h-[500px]">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gray-50 border-b">
+                    <CardTitle className="text-xl flex items-center gap-2">
+                        <Users className="h-5 w-5 text-gray-500" />
+                        Teams
+                    </CardTitle>
+                    <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Team
+                    </Button>
+                </CardHeader>
+                <CardContent className="p-4">
+                    <ScrollArea className="h-[400px] pr-4">
+                        {teams.length === 0 ? (
+                            <div className="flex h-full items-center justify-center">
+                                <p className="text-muted-foreground text-sm">No teams added yet</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {teams.map((team) => (
+                                    <div key={team.id}
+                                        className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
+                                    >
+
+                                        <div className="flex items-center gap-3">
+                                            {team.photo && (
+                                                <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
+                                                    <img
+                                                        src={`/storage/${team.photo}`}
+                                                        alt={team.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h3 className="font-medium">{team.name}</h3>
+                                                <p className="text-muted-foreground text-xs">
+                                                    {team.players_count} players • {team.games_count} games
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Actions</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => openEditDialog(team)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => openDeleteDialog(team)} className="text-red-600">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </ScrollArea>
+                </CardContent>
+            </Card>
 
       {/* Add Team Dialog */}
       <Dialog open={isAddTeamOpen} onOpenChange={setIsAddTeamOpen}>
