@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Schema::table('stats', function (Blueprint $table) {
-        //     $table->foreignId('event_id')->after('action_id')->constrained('events')->onDelete('cascade');
-        // });
+        Schema::table('game_players', function (Blueprint $table) {
+            $table->enum('initial_position', ['attack', 'defense'])->nullable()->after('player_id');
+
+        });
     }
 
     /**
@@ -21,9 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('stats', function (Blueprint $table) {
-            $table->dropForeign(['event_id']);
-            $table->dropColumn('event_id');
+        Schema::table('game_players', function (Blueprint $table) {
+            $table->dropColumn('initial_position');
         });
     }
 };
