@@ -61,35 +61,49 @@ export default function PlayersCard() {
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
 
-    // Fetch players and teams data
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [playersResponse, teamsResponse] = await Promise.all([
-                    fetch("api/players", { method: "GET" }),
-                    fetch("api/teams", { method: "GET" }),
-                ])
-
-                if (!playersResponse.ok) {
-                    throw new Error("Error players: " + playersResponse.status)
-                }
-                if (!teamsResponse.ok) {
-                    throw new Error("Error teams: " + teamsResponse.status)
-                }
-
-                const playerData = await playersResponse.json()
-                const teamData = await teamsResponse.json()
-
-                setPlayers(playerData)
-                setTeams(teamData)
-            } catch (error) {
-                console.error("Error fetching data:", error)
-            }
-        }
-
-        fetchData()
+        fetchPlayers()
+        fetchTeams()
     }, [])
 
+    // Fetch Players
+    const fetchPlayers = async () => {
+        try {
+            const response = await fetch("api/players", {
+                method: "GET",
+            })
+
+            if (!response.ok) {
+                throw new Error("Error Players Server: " + response.status)
+            }
+
+            const playerData = await response.json()
+
+            setPlayers(playerData)
+        } catch (error) {
+            console.error("Error fetching Players:", error)
+        }
+    }
+
+    // Fetch Teams
+    const fetchTeams = async () => {
+        try {
+            const response = await fetch("api/teams", {
+                method: "GET",
+            })
+
+            if (!response.ok) {
+                throw new Error("Error Teams Server: " + response.status)
+            }
+
+            const teamData = await response.json()
+            setTeams(teamData)
+        } catch (error) {
+            console.error("Error fetching Teams:", error)
+        }
+    }
+
+    // Validate errors on form
     const validateForm = (): boolean => {
         const errors: { [key: string]: string } = {}
 
@@ -254,7 +268,10 @@ export default function PlayersCard() {
                         <Users className="h-5 w-5 text-gray-500" />
                         Players
                     </CardTitle>
-                    <Button size="sm" onClick={() => setIsAddPlayerOpen(true)}>
+                    <Button size="sm" onClick={() => {
+                        fetchTeams()
+                        setIsAddPlayerOpen(true)
+                    }}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add Player
                     </Button>
@@ -306,7 +323,11 @@ export default function PlayersCard() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => openEditDialog(player)}>
+                                                <DropdownMenuItem onClick={() => {
+                                                    fetchPlayers()
+                                                    fetchTeams()
+                                                    openEditDialog(player)
+                                                }}>
                                                     <Edit className="mr-2 h-4 w-4" />
                                                     Edit
                                                 </DropdownMenuItem>
@@ -325,7 +346,12 @@ export default function PlayersCard() {
             </Card >
 
             {/* Add Player Dialog */}
-            <Dialog open={isAddPlayerOpen} onOpenChange={setIsAddPlayerOpen} >
+            <Dialog open={isAddPlayerOpen} onOpenChange={(open) => {
+                if (open) {
+                    fetchTeams()
+                }
+                setIsAddPlayerOpen(open)
+            }} >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add New Player</DialogTitle>
