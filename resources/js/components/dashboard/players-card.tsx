@@ -24,6 +24,9 @@ import { PlusCircle, Edit, Trash2, MoreHorizontal, Users } from "lucide-react"
 interface Team {
     id: number
     name: string
+    photo?: string
+    created_at: string
+    updated_at: string
 }
 
 interface Player {
@@ -31,8 +34,9 @@ interface Player {
     name: string
     gender: "male" | "female"
     team_id: number
-    team_name: string
+    team: Team
     photo?: string
+    created_at: string
 }
 
 interface FormData {
@@ -78,7 +82,7 @@ export default function PlayersCard() {
             }
 
             const playerData = await response.json()
-
+            console.log(playerData)
             setPlayers(playerData)
         } catch (error) {
             console.error("Error fetching Players:", error)
@@ -97,6 +101,7 @@ export default function PlayersCard() {
             }
 
             const teamData = await response.json()
+            console.log(teamData)
             setTeams(teamData)
         } catch (error) {
             console.error("Error fetching Teams:", error)
@@ -152,7 +157,7 @@ export default function PlayersCard() {
 
             const playerData = await response.json()
             setPlayers(playerData)
-
+            fetchPlayers()
             setIsAddPlayerOpen(false)
             resetForm()
             setPhotoPreview(null)
@@ -186,7 +191,7 @@ export default function PlayersCard() {
             const updatePlayer = await response.json()
 
             setPlayers((prevPlayers) => prevPlayers.map((player) => (player.id === updatePlayer.id ? updatePlayer : player)))
-
+            fetchPlayers()
             setIsEditPlayerOpen(false)
             setSelectedPlayer(null)
             setPhotoPreview(null)
@@ -270,6 +275,7 @@ export default function PlayersCard() {
                     </CardTitle>
                     <Button size="sm" onClick={() => {
                         fetchTeams()
+                        resetForm()
                         setIsAddPlayerOpen(true)
                     }}>
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -309,9 +315,8 @@ export default function PlayersCard() {
                                             <div>
                                                 <h3 className="font-medium">{player.name}</h3>
                                                 <div className="flex gap-1 text-xs">
-                                                    {/* {getPositionBadge(player.position)} */}
                                                     {getGenderBadge(player.gender)}
-                                                    <span className="text-muted-foreground">{player.team_name}</span>
+                                                    <span className="mt-1 ml-1 text-muted-foreground">{player.team?.name || "No team"}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -326,6 +331,7 @@ export default function PlayersCard() {
                                                 <DropdownMenuItem onClick={() => {
                                                     fetchPlayers()
                                                     fetchTeams()
+                                                    setFormErrors({})
                                                     openEditDialog(player)
                                                 }}>
                                                     <Edit className="mr-2 h-4 w-4" />
@@ -406,7 +412,7 @@ export default function PlayersCard() {
                                 {photoPreview && (
                                     <div className="mt-2 max-w-xs">
                                         <img
-                                            src={photoPreview || "/placeholder.svg"}
+                                            src={photoPreview}
                                             alt="Preview"
                                             className="rounded-md max-h-32 object-cover"
                                         />
@@ -488,7 +494,7 @@ export default function PlayersCard() {
                                     <div className="mt-2 max-w-xs">
                                         {photoPreview.startsWith("blob:") ? (
                                             <img
-                                                src={photoPreview || "/placeholder.svg"}
+                                                src={photoPreview}
                                                 alt="New preview"
                                                 className="rounded-md max-h-32 object-cover"
                                             />
