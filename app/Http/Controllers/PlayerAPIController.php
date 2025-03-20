@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Player;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class PlayerAPIController extends Controller
@@ -23,11 +24,13 @@ class PlayerAPIController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'team_id'  => 'required|exists:teams,id',
+            'team_id'  => 'nullable|exists:teams,id',
             'name'     => 'required|string|min:1|max:100',
             'gender'   => 'required|string|max:10',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg'
         ]);
+
+        Log::debug($request);
 
         $photo = null;
         if ($request->hasFile('photo')) {

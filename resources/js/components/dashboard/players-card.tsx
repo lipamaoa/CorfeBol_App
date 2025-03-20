@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { PlusCircle, Edit, Trash2, MoreHorizontal, Users } from "lucide-react"
+import { te } from "date-fns/locale"
 
 interface Team {
     id: number
@@ -42,7 +43,7 @@ interface Player {
 interface FormData {
     name: string
     gender: "male" | "female"
-    team_id: string
+    team_id?: string
     photo: File | null
 }
 
@@ -82,7 +83,6 @@ export default function PlayersCard() {
             }
 
             const playerData = await response.json()
-            console.log(playerData)
             setPlayers(playerData)
         } catch (error) {
             console.error("Error fetching Players:", error)
@@ -101,7 +101,6 @@ export default function PlayersCard() {
             }
 
             const teamData = await response.json()
-            console.log(teamData)
             setTeams(teamData)
         } catch (error) {
             console.error("Error fetching Teams:", error)
@@ -116,9 +115,9 @@ export default function PlayersCard() {
             errors.name = "Player name is required"
         }
 
-        if (!formData.team_id) {
-            errors.team_id = "Team selection is required"
-        }
+        // if (!formData.team_id) {
+        //     errors.team_id = "Team selection is required"
+        // }
 
         setFormErrors(errors)
         return Object.keys(errors).length === 0
@@ -142,10 +141,11 @@ export default function PlayersCard() {
             const data = new FormData()
             data.append("name", formData.name)
             data.append("gender", formData.gender)
-            data.append("team_id", formData.team_id)
+            if (formData.team_id) data.append("team_id", formData.team_id)
 
             if (formData.photo) data.append("photo", formData.photo)
 
+            console.log(data.get("team_id"))
             const response = await fetch("api/players", {
                 method: "POST",
                 body: data,
@@ -154,7 +154,8 @@ export default function PlayersCard() {
             if (!response.ok) {
                 throw new Error(`Failed to add player: ${response.status}`)
             }
-
+            console.log(response.status)
+            
             const playerData = await response.json()
             setPlayers(playerData)
             fetchPlayers()
@@ -173,7 +174,7 @@ export default function PlayersCard() {
             const data = new FormData()
             data.append("name", formData.name)
             data.append("gender", formData.gender)
-            data.append("team_id", formData.team_id)
+            if (formData.team_id) data.append("team_id", formData.team_id)
             data.append("_method", "PUT")
 
             if (formData.photo) data.append("photo", formData.photo)
