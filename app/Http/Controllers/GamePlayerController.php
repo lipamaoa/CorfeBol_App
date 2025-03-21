@@ -16,32 +16,35 @@ class GamePlayerController extends Controller
         $request->validate([
             'game_id' => 'required|exists:games,id',
             'player_id' => 'required|exists:players,id',
-            'position' => 'required|in:attack,defense,bench',
+            'initial_position' => 'required|in:attack,defense,bench',
         ]);
 
-        try {
-            // Encontrar o registro existente ou criar um novo
-            $gamePlayer = GamePlayer::where('game_id', $request->game_id)
-                ->where('player_id', $request->player_id)
-                ->first();
+        Log::debug($request);
 
-            if ($gamePlayer) {
-                // Atualizar a posição
-                $gamePlayer->initial_position = $request->position;
-                $gamePlayer->save();
-            } else {
-                // Criar um novo registro
+        try {
+            
+            $updated = GamePlayer::where('game_id', $request->game_id)
+                ->where('player_id', $request->player_id)
+                ->update([
+                    'initial_position' => $request->initial_position,
+                ]);
+
+            if (!$updated) {
                 $gamePlayer = GamePlayer::create([
                     'game_id' => $request->game_id,
                     'player_id' => $request->player_id,
-                    'initial_position' => $request->position,
+                    'initial_position' => $request->initial_position,
                 ]);
+            } else {
+                $gamePlayer = GamePlayer::where('game_id', $request->game_id)
+                    ->where('player_id', $request->player_id)
+                    ->first();
             }
 
             Log::info('Posição do jogador atualizada', [
                 'game_id' => $request->game_id,
                 'player_id' => $request->player_id,
-                'position' => $request->position
+                'initial_position' => $request->initial_position
             ]);
 
             return response()->json([
@@ -53,7 +56,8 @@ class GamePlayerController extends Controller
             Log::error('Erro ao atualizar posição do jogador', [
                 'error' => $e->getMessage(),
                 'game_id' => $request->game_id,
-                'player_id' => $request->player_id
+                'player_id' => $request->player_id,
+                'initial_position' => $request->initial_position
             ]);
 
             return response()->json([
@@ -76,7 +80,7 @@ class GamePlayerController extends Controller
             $players = $gamePlayers->map(function ($gamePlayer) {
                 $player = $gamePlayer->player;
                 $player->position = $gamePlayer->initial_position;
-                
+
                 return $player;
             });
 
