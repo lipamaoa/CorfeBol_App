@@ -142,32 +142,72 @@ export default function Create() {
 
   const handleAddGame = async () => {
     if (!validateForm()) return
-
+  
     try {
       const data = new FormData()
       data.append("team_a_id", formData.team_a_id)
       data.append("team_b_id", formData.team_b_id)
       data.append("date", formData.date.toISOString())
       data.append("location", formData.location)
-
-      //Criar um novo jogo na API
+  
+      // Log dos dados que estão sendo enviados para depuração
+      console.log("Enviando dados:", {
+        team_a_id: formData.team_a_id,
+        team_b_id: formData.team_b_id,
+        date: formData.date.toISOString(),
+        location: formData.location
+      })
+  
+      // Criar um novo jogo na API
       const response = await fetch("/api/games", {
         method: "POST",
         body: data,
+        headers: {
+          'Accept': 'application/json'
+        }
       })
-
-      if (!response.ok) {
-        throw new Error("Error Server: " + response.status)
+  
+      // Capturar o texto da resposta para análise
+      const responseText = await response.text()
+      
+      // Tentar converter para JSON se possível
+      let responseData
+      try {
+        responseData = JSON.parse(responseText)
+      } catch (e) {
+        // Se não for JSON válido, manter como texto
+        responseData = responseText
       }
-
-      //Obter os dados do jogo
-      const gameData = await response.json()
-      setGames(gameData)
-
-      //Fechar o dialog
+      
+      // Log da resposta completa para depuração
+      console.log("Resposta completa:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries([...response.headers]),
+        data: responseData
+      })
+  
+      if (!response.ok) {
+        // Extrair mensagem de erro do JSON se disponível
+        const errorMessage = responseData && responseData.message 
+          ? responseData.message 
+          : `Erro do servidor: ${response.status}`
+        
+        throw new Error(errorMessage)
+      }
+  
+      // Se chegou aqui, a resposta é válida
+      setGames(Array.isArray(responseData) ? responseData : [])
+  
+      // Fechar o dialog e resetar o formulário
       resetForm()
+      setActiveTab("calendar")
+      
+      // Mostrar mensagem de sucesso
+      alert("Jogo criado com sucesso!")
     } catch (error) {
-      console.error("Error: ", error)
+      console.error("Erro completo:", error)
+      alert(`Falha ao criar jogo: ${error.message}`)
     }
   }
 

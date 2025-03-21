@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Head } from "@inertiajs/react"
+import { Head, router, usePage } from "@inertiajs/react"
 import AppLayout from "@/layouts/app-layout"
 import Navbar from "@/components/navbar"
 import { GameHeader } from "@/components/record/GameHeader"
@@ -12,16 +12,19 @@ import { PlayerStats } from "@/components/record/PlayerStats"
 import { EventDialog } from "@/components/record/EventDialog"
 import { EditEventDialog } from "@/components/record/EditEventDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { router } from "@inertiajs/inertia"
 
+// Importe o serviço no topo do arquivo
+import { updatePlayerPosition as updatePlayerPositionAPI, getGamePlayers } from "@/api/player-api"
 
 // Define interfaces for our data types
 interface Player {
   id: number
   name: string
   gender: "male" | "female"
-  position: "attack" | "defense"
+  position: "attack" | "defense"| "bench" 
   team_id: number
+  positionIndex?: number // Make positionIndex optional
+  zone?: "attack" | "defense" | "bench" // Add zone as an optional property
 }
 
 interface Action {
@@ -69,30 +72,33 @@ interface Possession {
   events: Stat[]
 }
 
-interface RecordGameProps {
-  game: Game
-  players: Player[]
-  stats: Stat[]
-  actions: Action[]
-}
-
 // Export interfaces for use in other components
 export type { Player, Action, Team, Game, Stat, Possession }
 
-const RecordGame = ({ game, players: initialPlayers, stats: initialStats, actions }: RecordGameProps) => {
+const RecordGame = ({
+  game,
+  players: initialPlayers,
+  stats: initialStats,
+  actions,
+}: {
+  game: Game;
+  players: Player[];
+  stats: Stat[];
+  actions: Action[];
+}) => {
   const [matchTime, setMatchTime] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [period, setPeriod] = useState(1)
   const [events, setEvents] = useState<Stat[]>(initialStats || [])
   const [score, setScore] = useState(0)
   const [opponentScore, setOpponentScore] = useState(0)
-  const [teamName, setTeamName] = useState(game?.teamA?.name || "Our Team")
-  const [teamALogo, setTeamALogo] = useState(game?.teamA?.logo_url || null)
-  const [teamBLogo, setTeamBLogo] = useState(game?.teamB?.logo_url || null)
-  const [opponentName, setOpponentName] = useState(game?.teamB?.name || "Opponent")
-  const [players, setPlayers] = useState<Player[]>(initialPlayers?.filter((p) => p.team_id === game.team_a_id) || [])
+  const [teamName, setTeamName] = useState(game.teamA || "Our Team")
+  const [teamALogo, setTeamALogo] = useState(game.teamA?.logo_url || null)
+  const [teamBLogo, setTeamBLogo] = useState(game.teamB?.logo_url || null)
+  const [opponentName, setOpponentName] = useState(game.teamB || "Opponent")
+  const [players, setPlayers] = useState<Player[]>(initialPlayers?.filter((p) => p.team_id === game?.team_a_id) || [])
 
-  console.log("Jogadores:" + players)
+ 
 
   // State for tracking possessions
   const [currentPossession, setCurrentPossession] = useState<Possession>({
@@ -259,7 +265,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     // Record possession change event
     const eventData: Stat = {
       game_id: game.id,
-      player_id: playerId, // Use a valid player ID instead of null
+      player_id: playerId, 
       action_id: actions.find((a) => a.code === "O")?.id || 0,
       success: true,
       event_type: type === "attack" ? "start_attack" : "start_defense",
@@ -273,10 +279,12 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
   }
 
 
+
   // Update player position
   const updatePlayerPosition = (playerId: number, zone: "attack" | "defense" | "bench", positionIndex?: number) => {
     console.log(`Updating player ${playerId} to zone ${zone} with position index ${positionIndex}`)
 
+    // Primeiro, atualize o estado local para feedback imediato
     setPlayers((prevPlayers) => {
       // Cria uma cópia do array de jogadores
       const updatedPlayers = [...prevPlayers]
@@ -292,15 +300,44 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
       // Atualiza a zona e o índice de posição do jogador
       updatedPlayers[playerIndex] = {
         ...updatedPlayers[playerIndex],
-        zone,
-        positionIndex,
+        position: zone, // Atualiza a posição principal (attack/defense/bench)
+        positionIndex: positionIndex, // Mantém o índice da posição
       }
 
-      console.log(`Player updated:`, updatedPlayers[playerIndex])
+      console.log(`Player updated locally:`, updatedPlayers[playerIndex])
 
       return updatedPlayers
     })
+
+    // Em seguida, envie a atualização para o backend
+    updatePlayerPositionAPI(game.id, playerId, zone)
+      .then((response) => {
+        console.log("Player position updated on server:", response)
+      })
+      .catch((error) => {
+        console.error("Failed to update player position on server:", error)
+        // Opcionalmente, você pode reverter a mudança local se a atualização do servidor falhar
+        // ou implementar uma fila de tentativas
+      })
   }
+
+  // Adicione uma função para carregar os jogadores do servidor
+  const loadGamePlayers = () => {
+    getGamePlayers(game.id)
+      .then((data) => {
+        console.log("Loaded players from server:", data)
+        // Atualizar o estado dos jogadores com os dados do servidor
+        setPlayers(data)
+      })
+      .catch((error) => {
+        console.error("Failed to load game players:", error)
+      })
+  }
+
+  // Adicione um useEffect para carregar os jogadores quando o componente montar
+  useEffect(() => {
+    loadGamePlayers()
+  }, [game.id]) // Recarregar quando o ID do jogo mudar
 
   // Add event to current possession
   const addEventToPossession = (event: Stat) => {
@@ -333,6 +370,8 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     // Start new possession of opposite type
     startNewPossession(currentPossession.type === "attack" ? "defense" : "attack")
   }
+
+  const { route } = usePage().props
 
   // Função para registrar um evento usando apenas Inertia
   const recordEvent = (eventData: Stat) => {
@@ -536,33 +575,39 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
   // Get attack players
   const getAttackPlayers = (): Player[] => {
-    return players.filter((p) => p.position === "attack").slice(0, 4)
+    return players.filter((p) => p.position === "attack")
   }
 
   // Get defense players
   const getDefensePlayers = (): Player[] => {
-    return players.filter((p) => p.position === "defense").slice(0, 4)
+    return players.filter((p) => p.position === "defense")
   }
 
   // Get substitute players
   const getSubstitutes = (): Player[] => {
-    const activePlayers = [...getAttackPlayers(), ...getDefensePlayers()]
-    const activePlayerIds = activePlayers.map((p) => p.id)
-    return players.filter((p) => !activePlayerIds.includes(p.id))
+    return players.filter((p) => p.position === "bench" || !p.position)
   }
 
   // Function to switch attack and defense players
   const switchAttackDefense = async () => {
     // Separate attack and defense players
-    const attackPlayers = players.filter((p) => p.position === "attack")
-    const defensePlayers = players.filter((p) => p.position === "defense")
+    const attackPlayers = getAttackPlayers()
+    const defensePlayers = getDefensePlayers()
 
     // Update positions locally
     const updatedPlayers = players.map((player) => {
       if (attackPlayers.some((p) => p.id === player.id)) {
-        return { ...player, position: "defense" as const }
+        return {
+          ...player,
+          position: "defense" as const,
+          zone: "defense" as const,
+        }
       } else if (defensePlayers.some((p) => p.id === player.id)) {
-        return { ...player, position: "attack" as const }
+        return {
+          ...player,
+          position: "attack" as const,
+          zone: "attack" as const,
+        }
       }
       return player
     })
@@ -642,6 +687,11 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     })
   }
 
+  // Adicione esta função ao componente Record:
+  const onPlayerPositionUpdated = (updatedPlayer) => {
+    setPlayers((prevPlayers) => prevPlayers.map((player) => (player.id === updatedPlayer.id ? updatedPlayer : player)))
+  }
+
   // Create a context object with all the state and functions we need to pass down
   const gameContext = {
     game,
@@ -675,7 +725,9 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     getSubstitutes,
     openEditDialog,
     handleDeleteEvent,
-    updatePlayerPosition
+    updatePlayerPosition,
+    // ... outros valores
+    onPlayerPositionUpdated,
   }
 
   return (
@@ -755,4 +807,24 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 }
 
 export default RecordGame
+
+// Função auxiliar para obter o nome completo do tipo de lançamento
+const getFullShotTypeName = (type: string) => {
+  switch (type) {
+    case "LC":
+      return "Short Range"
+    case "LM":
+      return "Medium Range"
+    case "LL":
+      return "Long Range"
+    case "P":
+      return "Layup"
+    case "L":
+      return "Free Throw"
+    case "Pe":
+      return "Penalty"
+    default:
+      return type
+  }
+}
 

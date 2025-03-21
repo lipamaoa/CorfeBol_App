@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Player;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class PlayerAPIController extends Controller
 {
@@ -21,7 +22,10 @@ class PlayerAPIController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
+
     {
+
+        Log::debug($request);
         $request->validate([
             'team_id'  => 'required|exists:teams,id',
             'name'     => 'required|string|min:1|max:100',
