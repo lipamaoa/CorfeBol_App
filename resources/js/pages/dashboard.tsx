@@ -19,30 +19,120 @@ import {
 } from "lucide-react"
 import { Link } from "@inertiajs/react"
 import Navbar from "@/components/navbar"
+import { useEffect, useState } from "react"
 
-export default function Dashboard({ nextGame, teams, players, stats }) {
+interface Team {
+    id: number
+    name: string
+    photo?: string
+    created_at: string
+    players_count: number
+    games_count: number
+  }
+
+interface Game {
+    id: number
+    team_a_id?: number
+    team_b_id?: number
+    date: string
+    time?: string
+    location: string
+    team_a: Team
+    team_b: Team
+  }
+
+  interface FormData {
+    team_a_id: string
+    team_b_id: string
+    date: Date
+    location: string
+  }
+
+export default function Dashboard({nextGame, stats, players}) {
+
   // Format date for display
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return "No date available"
-    const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+    const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    }
     return new Date(dateString).toLocaleDateString(undefined, options)
   }
 
+    //Busca Teams
+    const [teams, setTeams] = useState<Team[]>([])
+    useEffect(() => {
+        handleTeams()
+    }, [])
+
+    const handleTeams = async () => {
+        try {
+            const response = await fetch("/api/teams", {
+                method: "GET",
+            })
+
+            if (!response.ok) {
+                throw new Error("Error server: " + response.status)
+            }
+
+            const teamData = await response.json()
+
+            setTeams(teamData)
+        } catch (error) {
+            console.error("Error: ", error)
+        }
+    }
+
+    //Busca Jogos
+    const [games, setGames] = useState<Game[]>([])
+    useEffect(() => {
+        handleIndex()
+    }, [])
+
+    const handleIndex = async () => {
+        
+        try {
+            const response = await fetch("/api/games/", {
+                method: "GET",
+            })
+
+            if (!response.ok) {
+                throw new Error(`Erro na API: ${response.status}`);
+            }
+
+            const data = await response.json()
+
+            //Filtrar apenas os próximos jogos
+            const upcomingGames = data
+                .filter((game: Game) => new Date(game.date) > new Date())
+                .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+            setGames(upcomingGames)
+        }
+        catch (error) {
+            console.error(error)
+        }
+    }
+
   // Calculate days until the game
-  const getDaysUntilGame = (dateString) => {
+  const getDaysUntilGame = (dateString: string) => {
     if (!dateString) return 0
     const gameDate = new Date(dateString)
     const today = new Date()
+    today.setHours(0, 0, 0, 0);//ignora horas, considerar apenas data
     const diffTime = gameDate.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays > 0 ? diffDays : 0
   }
 
   // Only calculate if nextGame exists
+  nextGame = games.length > 0 ? games[0] : null
   const daysUntilGame = nextGame ? getDaysUntilGame(nextGame.date) : 0
-  const hasNextGame = nextGame && Object.keys(nextGame).length > 0
 
-  // Quick stats for the dashboard
+  //Quick stats for the dashboard
   const quickStats = [
     {
       title: "Teams",
@@ -69,7 +159,7 @@ export default function Dashboard({ nextGame, teams, players, stats }) {
   return (
     <>
       <Navbar />
-      <AppLayout breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }]}>
+      <AppLayout breadcrumbs={[{ title: "Dashboard", href: "/dashboard" }]}>
         <Head title="Dashboard" />
 
         {/* Quick Stats Overview */}
@@ -86,10 +176,13 @@ export default function Dashboard({ nextGame, teams, players, stats }) {
             </Card>
           ))}
         </div>
+        <div>
 
+  </div>
+        {/* UPCOMING GAMES */}
         <div className="space-y-6">
           {/* Next Game Card */}
-          {hasNextGame ? (
+          {nextGame ? (
             <div className="rounded-lg border bg-card text-card-foreground shadow">
               <div className="p-4">
                 <div className="flex flex-col space-y-4">
@@ -108,9 +201,9 @@ export default function Dashboard({ nextGame, teams, players, stats }) {
                         <div className="flex items-center justify-center gap-12">
                           <div className="flex flex-col items-center space-y-1">
                             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/5 text-xl font-bold">
-                              {nextGame.home_team?.name?.charAt(0) || "?"}
+                              {nextGame?.team_a?.name?.charAt(0) || "?"}
                             </div>
-                            <span className="text-sm font-medium">{nextGame.home_team?.name || "Unknown Team"}</span>
+                            <span className="text-sm font-medium">{nextGame?.team_a?.name || "Unknown Team"}</span>
                             <span className="text-xs text-muted-foreground">Home</span>
                           </div>
 
@@ -120,9 +213,9 @@ export default function Dashboard({ nextGame, teams, players, stats }) {
 
                           <div className="flex flex-col items-center space-y-1">
                             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/5 text-xl font-bold">
-                              {nextGame.away_team?.name?.charAt(0) || "?"}
+                              {nextGame?.team_b?.name?.charAt(0) || "?"}
                             </div>
-                            <span className="text-sm font-medium">{nextGame.away_team?.name || "Unknown Team"}</span>
+                            <span className="text-sm font-medium">{nextGame?.team_b?.name || "Unknown Team"}</span>
                             <span className="text-xs text-muted-foreground">Away</span>
                           </div>
                         </div>
@@ -131,24 +224,24 @@ export default function Dashboard({ nextGame, teams, players, stats }) {
                         <div className="mt-4 flex flex-wrap items-center justify-center gap-4 border-t border-b py-3">
                           <div className="flex items-center gap-1.5">
                             <CalendarDays className="h-4 w-4 text-primary" />
-                            <span className="text-sm">{formatDate(nextGame.date)}</span>
+                            <span className="text-sm">{formatDate(nextGame?.date)}</span>
                           </div>
 
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-4 w-4 text-primary" />
-                            <span className="text-sm">{nextGame.time || "Time not set"}</span>
+                            <span className="text-sm">{nextGame?.time || "Time not set"}</span>
                           </div>
 
                           <div className="flex items-center gap-1.5">
                             <MapPin className="h-4 w-4 text-primary" />
-                            <span className="text-sm">{nextGame.location || "Location not set"}</span>
+                            <span className="text-sm">{nextGame?.location || "Location not set"}</span>
                           </div>
                         </div>
 
                         {/* Action buttons in a row */}
                         <div className="mt-3 flex items-center justify-center gap-3">
                           <Button asChild size="sm">
-                            <Link href={`/games/record?game=${nextGame.id}`} className="flex items-center gap-1.5">
+                            <Link href={`/games/record?game=${nextGame?.id}`} className="flex items-center gap-1.5">
                               <ClipboardList className="h-3.5 w-3.5" />
                               Record Game
                             </Link>
