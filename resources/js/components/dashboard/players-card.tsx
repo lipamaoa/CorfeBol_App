@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,8 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, Edit, Trash2, MoreHorizontal, Users } from "lucide-react"
-import { te } from "date-fns/locale"
+import { PlusCircle, Edit, Trash2, MoreHorizontal, Users, Filter, FilterX } from "lucide-react"
 
 interface Team {
     id: number
@@ -47,7 +45,23 @@ interface FormData {
     photo: File | null
 }
 
-export default function PlayersCard() {
+interface PlayersCardProps {
+    players: Player[]
+    teams: Team[]
+    onPlayersChange?: () => void
+    onTeamsChange?: () => void
+    selectedTeamId?: number | null
+    onClearTeamFilter?: () => void
+}
+
+export default function PlayersCard({
+    players = [],
+    teams = [],
+    onPlayersChange,
+    onTeamsChange,
+    selectedTeamId,
+    onClearTeamFilter,
+}: PlayersCardProps) {
     const [isAddPlayerOpen, setIsAddPlayerOpen] = useState(false)
     const [isEditPlayerOpen, setIsEditPlayerOpen] = useState(false)
     const [isDeletePlayerOpen, setIsDeletePlayerOpen] = useState(false)
@@ -55,57 +69,25 @@ export default function PlayersCard() {
     const [formData, setFormData] = useState<FormData>({
         name: "",
         gender: "male",
-        team_id: "",
-        photo: null,
+        team_id: selectedTeamId ? selectedTeamId.toString() : "",
+        photo: null as File | null,
     })
 
-    const [players, setPlayers] = useState<Player[]>([])
-    const [teams, setTeams] = useState<Team[]>([])
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
-
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
 
+    // Update the team_id in formData when selectedTeamId changes
     useEffect(() => {
-        fetchPlayers()
-        fetchTeams()
-    }, [])
-
-    // Fetch Players
-    const fetchPlayers = async () => {
-        try {
-            const response = await fetch("api/players", {
-                method: "GET",
-            })
-
-            if (!response.ok) {
-                throw new Error("Error Players Server: " + response.status)
-            }
-
-            const playerData = await response.json()
-            setPlayers(playerData)
-        } catch (error) {
-            console.error("Error fetching Players:", error)
+        if (selectedTeamId) {
+            setFormData((prev) => ({
+                ...prev, team_id: selectedTeamId.toString(),
+            }))
         }
-    }
+    }, [selectedTeamId])
 
-    // Fetch Teams
-    const fetchTeams = async () => {
-        try {
-            const response = await fetch("api/teams", {
-                method: "GET",
-            })
-
-            if (!response.ok) {
-                throw new Error("Error Teams Server: " + response.status)
-            }
-
-            const teamData = await response.json()
-            setTeams(teamData)
-        } catch (error) {
-            console.error("Error fetching Teams:", error)
-        }
-    }
+    // Filter players by selected team
+    const filteredPlayers = selectedTeamId ? players.filter((player) => player.team_id === selectedTeamId) : players
 
     // Validate errors on form
     const validateForm = (): boolean => {
@@ -114,10 +96,6 @@ export default function PlayersCard() {
         if (!formData.name.trim()) {
             errors.name = "Player name is required"
         }
-
-        // if (!formData.team_id) {
-        //     errors.team_id = "Team selection is required"
-        // }
 
         setFormErrors(errors)
         return Object.keys(errors).length === 0
@@ -145,7 +123,6 @@ export default function PlayersCard() {
 
             if (formData.photo) data.append("photo", formData.photo)
 
-            console.log(data.get("team_id"))
             const response = await fetch("api/players", {
                 method: "POST",
                 body: data,
@@ -154,11 +131,11 @@ export default function PlayersCard() {
             if (!response.ok) {
                 throw new Error(`Failed to add player: ${response.status}`)
             }
-            console.log(response.status)
-            
-            const playerData = await response.json()
-            setPlayers(playerData)
-            fetchPlayers()
+
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
+
             setIsAddPlayerOpen(false)
             resetForm()
             setPhotoPreview(null)
@@ -189,10 +166,10 @@ export default function PlayersCard() {
                 throw new Error("Error Server: " + response.status)
             }
 
-            const updatePlayer = await response.json()
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
 
-            setPlayers((prevPlayers) => prevPlayers.map((player) => (player.id === updatePlayer.id ? updatePlayer : player)))
-            fetchPlayers()
             setIsEditPlayerOpen(false)
             setSelectedPlayer(null)
             setPhotoPreview(null)
@@ -214,7 +191,9 @@ export default function PlayersCard() {
                 throw new Error("Error Server: " + response.status)
             }
 
-            setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== selectedPlayer.id))
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
 
             setIsDeletePlayerOpen(false)
             setSelectedPlayer(null)
@@ -244,7 +223,7 @@ export default function PlayersCard() {
         setFormData({
             name: "",
             gender: "male",
-            team_id: "",
+            team_id: selectedTeamId ? selectedTeamId.toString() : "",
             photo: null,
         })
         setPhotoPreview(null)
@@ -274,24 +253,33 @@ export default function PlayersCard() {
                         <Users className="h-5 w-5 text-gray-500" />
                         Players
                     </CardTitle>
-                    <Button size="sm" onClick={() => {
-                        fetchTeams()
-                        resetForm()
-                        setIsAddPlayerOpen(true)
-                    }}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Player
-                    </Button>
+                    {selectedTeamId && onClearTeamFilter && (
+                        <Button variant="ghost" size="sm" onClick={onClearTeamFilter} className="ml-2 text-xs">
+                            Clear
+                        </Button>
+                    )}
+                    {/* Clear filter button */}
+                    <div className="flex gap-2">
+                        <Button size="sm" onClick={() => {
+                            resetForm()
+                            setIsAddPlayerOpen(true)
+                        }}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add Player
+                        </Button>
+                    </div>
+
                 </CardHeader>
                 <CardContent className="p-4">
                     <ScrollArea className="h-[400px] pr-4">
-                        {players.length === 0 ? (
+                        {filteredPlayers.length === 0 ? (
                             <div className="flex h-full items-center justify-center">
-                                <p className="text-sm text-muted-foreground">No players added yet</p>
+                                <p className="text-sm text-muted-foreground">
+                                    {selectedTeamId ? "No players in this team" : "No players added yet"}</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                {players.map((player) => (
+                                {filteredPlayers.map((player) => (
                                     <div
                                         key={player.id}
                                         className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
@@ -312,7 +300,6 @@ export default function PlayersCard() {
                                                     {player.name.charAt(0).toUpperCase()}
                                                 </div>
                                             )}
-                                            {/* {player.number} */}
                                             <div>
                                                 <h3 className="font-medium">{player.name}</h3>
                                                 <div className="flex gap-1 text-xs">
@@ -330,8 +317,6 @@ export default function PlayersCard() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onClick={() => {
-                                                    fetchPlayers()
-                                                    fetchTeams()
                                                     setFormErrors({})
                                                     openEditDialog(player)
                                                 }}>
@@ -354,11 +339,9 @@ export default function PlayersCard() {
 
             {/* Add Player Dialog */}
             <Dialog open={isAddPlayerOpen} onOpenChange={(open) => {
-                if (open) {
-                    fetchTeams()
-                }
                 setIsAddPlayerOpen(open)
-            }} >
+                if (!open) resetForm()
+            }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add New Player</DialogTitle>
@@ -413,7 +396,7 @@ export default function PlayersCard() {
                                 {photoPreview && (
                                     <div className="mt-2 max-w-xs">
                                         <img
-                                            src={photoPreview}
+                                            src={photoPreview || "/placeholder.svg"}
                                             alt="Preview"
                                             className="rounded-md max-h-32 object-cover"
                                         />
@@ -427,7 +410,6 @@ export default function PlayersCard() {
                             variant="outline"
                             onClick={() => {
                                 setIsAddPlayerOpen(false)
-                                setPhotoPreview(null)
                                 resetForm()
                             }}
                         >
@@ -488,14 +470,14 @@ export default function PlayersCard() {
                             {formErrors.team_id && <p className="text-red-500 text-sm">{formErrors.team_id}</p>}
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="player-team">Photo</Label>
+                            <Label htmlFor="edit-player-photo">Photo (optional)</Label>
                             <div className="flex flex-col gap-2">
-                                <Input id="team-photo" type="file" accept="image/*" ref={fileRef} onChange={handleFileChange} />
+                                <Input id="edit-player-photo" type="file" accept="image/*" onChange={handleFileChange} />
                                 {photoPreview && (
                                     <div className="mt-2 max-w-xs">
                                         {photoPreview.startsWith("blob:") ? (
                                             <img
-                                                src={photoPreview}
+                                                src={photoPreview || "/placeholder.svg"}
                                                 alt="New preview"
                                                 className="rounded-md max-h-32 object-cover"
                                             />

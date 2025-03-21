@@ -6,9 +6,7 @@ use Illuminate\Foundation\Application;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\GameRecordController;
 use App\Http\Controllers\StatController;
-use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ActionController;
-use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 
@@ -23,42 +21,19 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'main'])->name('dashboard');
-    Route::get('/games/create',[GameController::class, 'show'])->name('games.create');
-    // Route::prefix('teams')->controller(TeamController::class)->group(function () {
-    //     Route::put('/{id}', 'update')->name('teams.update');
-    //     Route::get('/{id}', 'findById')->name('teams.showid');
-    //     Route::post('/', 'store')->name('teams.store');
-    //     Route::delete('/{id}', 'delete')->name('teams.delete');
-    // });
+    Route::get('/dashboard', function () {
+        return Inertia::render('dashboard');
+    })->name('dashboard');
 
-    // Route::prefix('players')->controller(PlayerController::class)->group(function () {
-    //     Route::put('/{id}', 'update')->name('players.update');
-    //     Route::get('/{id}', 'findById')->name('players.showid');
-    //     Route::post('/', 'store')->name('players.store');
-    //     Route::delete('/{id}', 'delete')->name('players.delete');
-    // });
-
-    // Route::get('/games/create', function () {
-    //     return Inertia::render('games/create');
-    // })->name('games.create');
-    // Route::prefix('games')->controller(GameController::class)->group(function () {
-    //     Route::get('/create', 'show')->name('games.create');
-        // Route::get('/{id}', 'findById')->name('games.showid');
-        // Route::post('/', 'store')->name('games.store');
-        // Route::put('/{id}', 'update')->name('games.update');
-        // Route::delete('/{id}', 'delete')->name('games.delete');
-    // });
-
+    Route::get('/games/create', function(){
+        return Inertia::render('games/create');
+    })->name('games.create');
 
     // Game recording routes
     Route::get('/games', [GameRecordController::class, 'record'])->name('games.show');
     Route::get('/games/{id}/record', [GameRecordController::class, 'show'])->name('games.record');
     Route::post('/games/{id}/end', [GameRecordController::class, 'endGame'])->name('games.end');
 });
-
-
-
 
 // Route::middleware('auth')->group(function () {
 //     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

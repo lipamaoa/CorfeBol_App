@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -16,8 +15,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Edit, MoreHorizontal, PlusCircle, Trash2, Users } from "lucide-react"
-import { useState, useRef, useEffect } from "react"
+import { Edit, MoreHorizontal, PlusCircle, Trash2, Users, CheckCircle } from "lucide-react"
+import { useState, useRef } from "react"
 
 interface Team {
     id: number
@@ -28,7 +27,21 @@ interface Team {
     games_count: number
 }
 
-export default function TeamsCard() {
+interface TeamsCardProps {
+    teams: Team[]
+    onTeamsChange?: () => void
+    onPlayersChange?: () => void
+    selectedTeamId?: number | null
+    onSelectTeam?: (teamId: number | null) => void
+}
+
+export default function TeamsCard({
+    teams = [],
+    onTeamsChange,
+    onPlayersChange,
+    selectedTeamId,
+    onSelectTeam,
+}: TeamsCardProps) {
     const [isAddTeamOpen, setIsAddTeamOpen] = useState(false)
     const [isEditTeamOpen, setIsEditTeamOpen] = useState(false)
     const [isDeleteTeamOpen, setIsDeleteTeamOpen] = useState(false)
@@ -37,11 +50,6 @@ export default function TeamsCard() {
         name: "",
         photo: null as File | null,
     })
-
-    const [teams, setTeams] = useState<Team[]>([])
-    useEffect(() => {
-        handleIndex()
-    }, [])
 
     const [photoPreview, setPhotoPreview] = useState<string | null>(null)
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
@@ -55,23 +63,6 @@ export default function TeamsCard() {
 
             const objectUrl = URL.createObjectURL(file)
             setPhotoPreview(objectUrl)
-        }
-    }
-
-    const handleIndex = async () => {
-        try {
-            const response = await fetch("api/teams", {
-                method: "GET",
-            })
-
-            if (!response.ok) {
-                throw new Error("Error Server: " + response.status)
-            }
-
-            const teamData = await response.json()
-            setTeams(teamData)
-        } catch (error) {
-            console.error("Error:", error)
         }
     }
 
@@ -104,11 +95,13 @@ export default function TeamsCard() {
                 throw new Error("Error Server: " + response.status)
             }
 
-            const teamData = await response.json()
-            setTeams(teamData)
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
 
             setIsAddTeamOpen(false)
             resetForm()
+            setPhotoPreview(null)
         } catch (error) {
             console.error("Error:", error)
         }
@@ -133,9 +126,9 @@ export default function TeamsCard() {
                 throw new Error("Error Server: " + response.status)
             }
 
-            const updatedTeam = await response.json()
-
-            setTeams((prevTeams) => prevTeams.map((team) => (team.id === updatedTeam.id ? updatedTeam : team)))
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
 
             setIsEditTeamOpen(false)
             setSelectedTeam(null)
@@ -157,7 +150,11 @@ export default function TeamsCard() {
                 throw new Error("Error Server: " + response.status)
             }
 
-            setTeams((prevTeams) => prevTeams.filter((team) => team.id !== selectedTeam.id))
+            if (selectedTeamId === selectedTeam.id && onSelectTeam) onSelectTeam(null)
+
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
 
             setIsDeleteTeamOpen(false)
             setSelectedTeam(null)
@@ -194,6 +191,17 @@ export default function TeamsCard() {
         }
     }
 
+    const handleTeamClick = (teamId: number) => {
+        if (onSelectTeam) {
+            // if team is already selected, deselect it
+            if (selectedTeamId === teamId) {
+                onSelectTeam(null)
+            } else {
+                onSelectTeam(teamId)
+            }
+        }
+    }
+
     return (
         <>
             <Card className="border shadow-sm h-[500px]">
@@ -201,6 +209,11 @@ export default function TeamsCard() {
                     <CardTitle className="text-xl flex items-center gap-2">
                         <Users className="h-5 w-5 text-gray-500" />
                         Teams
+                        {selectedTeamId && onSelectTeam && (
+                            <Button variant="ghost" size="sm" onClick={() => onSelectTeam(null)} className="ml-2 text-xs">
+                                Clear Filter
+                            </Button>
+                        )}
                     </CardTitle>
                     <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -217,9 +230,9 @@ export default function TeamsCard() {
                             <div className="space-y-2">
                                 {teams.map((team) => (
                                     <div key={team.id}
-                                        className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
-                                    >
-
+                                        className={`flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors ${selectedTeamId === team.id ? "bg-primary/10 border-primary/30" : ""
+                                            } ${onSelectTeam ? "cursor-pointer" : ""}`}
+                                        onClick={() => handleTeamClick(team.id)}>
                                         <div className="flex items-center gap-3">
                                             {team.photo ? (
                                                 <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
@@ -236,9 +249,12 @@ export default function TeamsCard() {
                                             )}
                                             <div>
                                                 <h3 className="font-medium">{team.name}</h3>
-                                                {/* <p className="text-muted-foreground text-xs">
-                                                    {team.players_count} players • {team.games_count} games
-                                                </p> */}
+                                                {selectedTeamId === team.id && (
+                                                    <div className="flex items-center text-primary text-xs mt-1">
+                                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                                        Selected
+                                                    </div>
+                                                )}
                                             </div>
 
                                         </div>
@@ -308,8 +324,7 @@ export default function TeamsCard() {
                             onClick={() => {
                                 setIsAddTeamOpen(false)
                                 resetForm()
-                            }}
-                        >
+                            }}>
                             Cancel
                         </Button>
                         <Button onClick={handleAddTeam}>Add Team</Button>
@@ -365,8 +380,7 @@ export default function TeamsCard() {
                             onClick={() => {
                                 setIsEditTeamOpen(false)
                                 resetForm()
-                            }}
-                        >
+                            }}>
                             Cancel
                         </Button>
                         <Button onClick={handleEditTeam}>Save Changes</Button>

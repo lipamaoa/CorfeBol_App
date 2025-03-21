@@ -46,10 +46,6 @@ class GameApiController extends Controller
      */
     public function show(string $id)
     {
-        // TeamController
-        $teamController = app(TeamController::class);
-        $teams = $teamController->show();
-
         $games = Game::with(['teamA', 'teamB'])->findOrFail($id);
 
         return response()->json($games);
