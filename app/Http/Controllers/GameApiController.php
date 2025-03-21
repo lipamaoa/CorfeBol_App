@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Game;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Models\GamePlayer;
+use App\Models\Player;
 
 class GameApiController extends Controller
 {
@@ -28,17 +31,34 @@ class GameApiController extends Controller
             'location' => 'nullable|string|max:255',
         ]);
 
-        // dd($request);
-        Game::create([
+
+        $game= Game::create([
             'team_a_id' => $request->team_a_id,
             'team_b_id' => $request->team_b_id,
             'date' => $request->date,
             'location' => $request->location
         ]);
 
-        $games = Game::with(['teamA', 'teamB'])->get();
 
-        return response()->json($games, 201);
+        // Get selected players from the form
+        $selectedPlayers = Player::where('team_id', $request->team_a_id)->get();
+        $playerPositions = $request->input('positions', []);
+
+        Log::debug($selectedPlayers);
+
+
+        // Insert into game_players table
+        foreach ($selectedPlayers as $playerId) {
+            GamePlayer::insert([
+                'game_id' => $game->id,
+                'player_id' => $playerId->id,
+                'initial_position' => $playerPositions[$playerId->id] ?? 'bench',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json($game, 201);
     }
 
     /**
