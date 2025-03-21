@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Player;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -27,9 +28,9 @@ class PlayerAPIController extends Controller
 
         Log::debug($request);
         $request->validate([
-            'team_id'  => 'required|exists:teams,id',
-            'name'     => 'required|string|min:1|max:100',
-            'gender'   => 'required|string|max:10',
+            'team_id' => 'nullable|exists:teams,id',
+            'name' => 'required|string|min:1|max:100',
+            'gender' => 'required|string|max:10',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg'
         ]);
 
@@ -39,14 +40,14 @@ class PlayerAPIController extends Controller
         }
 
         Player::create([
-            'team_id'  => $request->team_id,
-            'name'     => $request->name,
-            'gender'   => $request->gender,
-            'photo'    => $photo
+            'team_id' => $request->team_id,
+            'name' => $request->name,
+            'gender' => $request->gender,
+            'photo' => $photo
         ]);
 
         $players = Player::with('team')->get();
-        return response()->json($players);
+        return response()->json($players, 201);
     }
 
     /**
@@ -66,21 +67,24 @@ class PlayerAPIController extends Controller
         $player = Player::findOrFail($id);
 
         $request->validate([
-            'team_id'  => 'required|exists:teams,id',
-            'name'     => 'required|string|min:1|max:100',
-            'gender'   => 'required|string|max:10',
+            'team_id' => 'nullable|exists:teams,id',
+            'name' => 'required|string|min:1|max:100',
+            'gender' => 'required|string|max:10',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg'
         ]);
 
-        if ($request->has('team_id')) $player->team_id = $request->team_id;
-        if ($request->has('name')) $player->name = $request->name;
-        if ($request->has('gender')) $player->gender = $request->gender;
+        if ($request->has('team_id'))
+            $player->team_id = $request->team_id;
+        if ($request->has('name'))
+            $player->name = $request->name;
+        if ($request->has('gender'))
+            $player->gender = $request->gender;
 
-        // Se há nova foto, atualizar
         if ($request->hasFile('photo')) {
-            if ($player->photo) Storage::delete($player->photo);
+            if ($player->photo)
+                Storage::delete($player->photo);
 
-            $player->photo = Storage::putFile('teamPhotos', $request->photo);
+            $player->photo = Storage::putFile('playerPhotos', $request->photo);
         }
 
         $player->save();
@@ -95,7 +99,8 @@ class PlayerAPIController extends Controller
         $player = Player::findOrFail($id);
 
         // Apagamos foto
-        if ($player->photo) Storage::delete($player->photo);
+        if ($player->photo)
+            Storage::delete($player->photo);
 
         $player->delete();
         return response()->json(null, 204);

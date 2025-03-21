@@ -1,198 +1,206 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Edit, MoreHorizontal, PlusCircle, Trash2, Users } from "lucide-react"
-import { useState, useRef, useEffect } from "react"
+import { Edit, MoreHorizontal, PlusCircle, Trash2, Users, CheckCircle } from "lucide-react"
+import { useState, useRef } from "react"
 
 interface Team {
-  id: number
-  name: string
-  photo?: string
-  created_at: string
-  players_count: number
-  games_count: number
+    id: number
+    name: string
+    photo?: string
+    created_at: string
+    players_count: number
+    games_count: number
 }
 
-export default function TeamsCard() {
-  const [isAddTeamOpen, setIsAddTeamOpen] = useState(false)
-  const [isEditTeamOpen, setIsEditTeamOpen] = useState(false)
-  const [isDeleteTeamOpen, setIsDeleteTeamOpen] = useState(false)
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    photo: null as File | null,
-  })
+interface TeamsCardProps {
+    teams: Team[]
+    onTeamsChange?: () => void
+    onPlayersChange?: () => void
+    selectedTeamId?: number | null
+    onSelectTeam?: (teamId: number | null) => void
+}
 
-  const [teams, setTeams] = useState<Team[]>([])
-  useEffect(() => {
-    handleIndex()
-  }, [])
-
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null
-
-    if (file) {
-      setFormData((prev) => ({ ...prev, photo: file }))
-
-      const objectUrl = URL.createObjectURL(file)
-      setPhotoPreview(objectUrl)
-    }
-  }
-
-  const handleIndex = async () => {
-    try {
-      const response = await fetch("api/teams", {
-        method: "GET",
-      })
-
-      if (!response.ok) {
-        throw new Error("Error Server: " + response.status)
-      }
-
-      const teamData = await response.json()
-      setTeams(teamData)
-    } catch (error) {
-      console.error("Error:", error)
-    }
-  }
-
-  const validateForm = (): boolean => {
-    const errors: { [key: string]: string } = {}
-
-    if (!formData.name.trim()) {
-      errors.name = "Team name is required"
-    }
-
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleAddTeam = async () => {
-    if (!validateForm()) return
-
-    try {
-      const data = new FormData()
-      data.append("name", formData.name)
-
-      if (formData.photo) data.append("photo", formData.photo)
-
-      const response = await fetch("api/teams", {
-        method: "POST",
-        body: data,
-      })
-
-      if (!response.ok) {
-        throw new Error("Error Server: " + response.status)
-      }
-
-      const teamData = await response.json()
-      setTeams(teamData)
-
-      setIsAddTeamOpen(false)
-      resetForm()
-    } catch (error) {
-      console.error("Error:", error)
-    }
-  }
-
-  const handleEditTeam = async () => {
-    if (!selectedTeam || !validateForm()) return
-
-    try {
-      const data = new FormData()
-      data.append("name", formData.name)
-      data.append("_method", "PUT")
-
-      if (formData.photo) data.append("photo", formData.photo)
-
-      const response = await fetch(`/api/teams/${selectedTeam.id}`, {
-        method: "POST",
-        body: data,
-      })
-
-      if (!response.ok) {
-        throw new Error("Error Server: " + response.status)
-      }
-
-      const updatedTeam = await response.json()
-
-      setTeams((prevTeams) => prevTeams.map((team) => (team.id === updatedTeam.id ? updatedTeam : team)))
-
-      setIsEditTeamOpen(false)
-      setSelectedTeam(null)
-      setPhotoPreview(null)
-    } catch (error) {
-      console.error("Error:", error)
-    }
-  }
-
-  const handleDeleteTeam = async () => {
-    if (!selectedTeam) return
-
-    try {
-      const response = await fetch(`/api/teams/${selectedTeam.id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        throw new Error("Error Server: " + response.status)
-      }
-
-      setTeams((prevTeams) => prevTeams.filter((team) => team.id !== selectedTeam.id))
-
-      setIsDeleteTeamOpen(false)
-      setSelectedTeam(null)
-    } catch (error) {
-      console.error("Error:", error)
-    }
-  }
-
-  const openEditDialog = (team: Team) => {
-    setSelectedTeam(team)
-    setFormData({
-      name: team.name,
-      photo: null,
+export default function TeamsCard({
+    teams = [],
+    onTeamsChange,
+    onPlayersChange,
+    selectedTeamId,
+    onSelectTeam,
+}: TeamsCardProps) {
+    const [isAddTeamOpen, setIsAddTeamOpen] = useState(false)
+    const [isEditTeamOpen, setIsEditTeamOpen] = useState(false)
+    const [isDeleteTeamOpen, setIsDeleteTeamOpen] = useState(false)
+    const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
+    const [formData, setFormData] = useState({
+        name: "",
+        photo: null as File | null,
     })
-    setPhotoPreview(team.photo || null)
-    setFormErrors({})
-    setIsEditTeamOpen(true)
-  }
 
-  const openDeleteDialog = (team: Team) => {
-    setSelectedTeam(team)
-    setIsDeleteTeamOpen(true)
-  }
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
+    const fileRef = useRef<HTMLInputElement>(null)
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      photo: null,
-    })
-    setPhotoPreview(null)
-    setFormErrors({})
-    if (fileRef.current) {
-      fileRef.current.value = ""
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null
+
+        if (file) {
+            setFormData((prev) => ({ ...prev, photo: file }))
+
+            const objectUrl = URL.createObjectURL(file)
+            setPhotoPreview(objectUrl)
+        }
     }
-  }
+
+    const validateForm = (): boolean => {
+        const errors: { [key: string]: string } = {}
+
+        if (!formData.name.trim()) {
+            errors.name = "Team name is required"
+        }
+
+        setFormErrors(errors)
+        return Object.keys(errors).length === 0
+    }
+
+    const handleAddTeam = async () => {
+        if (!validateForm()) return
+
+        try {
+            const data = new FormData()
+            data.append("name", formData.name)
+
+            if (formData.photo) data.append("photo", formData.photo)
+
+            const response = await fetch("api/teams", {
+                method: "POST",
+                body: data,
+            })
+
+            if (!response.ok) {
+                throw new Error("Error Server: " + response.status)
+            }
+
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
+
+            setIsAddTeamOpen(false)
+            resetForm()
+            setPhotoPreview(null)
+        } catch (error) {
+            console.error("Error:", error)
+        }
+    }
+
+    const handleEditTeam = async () => {
+        if (!selectedTeam || !validateForm()) return
+
+        try {
+            const data = new FormData()
+            data.append("name", formData.name)
+            data.append("_method", "PUT")
+
+            if (formData.photo) data.append("photo", formData.photo)
+
+            const response = await fetch(`/api/teams/${selectedTeam.id}`, {
+                method: "POST",
+                body: data,
+            })
+
+            if (!response.ok) {
+                throw new Error("Error Server: " + response.status)
+            }
+
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
+
+            setIsEditTeamOpen(false)
+            setSelectedTeam(null)
+            setPhotoPreview(null)
+        } catch (error) {
+            console.error("Error:", error)
+        }
+    }
+
+    const handleDeleteTeam = async () => {
+        if (!selectedTeam) return
+
+        try {
+            const response = await fetch(`/api/teams/${selectedTeam.id}`, {
+                method: "DELETE",
+            })
+
+            if (!response.ok) {
+                throw new Error("Error Server: " + response.status)
+            }
+
+            if (selectedTeamId === selectedTeam.id && onSelectTeam) onSelectTeam(null)
+
+            // Notify dashboard component
+            if (onPlayersChange) onPlayersChange()
+            if (onTeamsChange) onTeamsChange()
+
+            setIsDeleteTeamOpen(false)
+            setSelectedTeam(null)
+        } catch (error) {
+            console.error("Error:", error)
+        }
+    }
+
+    const openEditDialog = (team: Team) => {
+        setSelectedTeam(team)
+        setFormData({
+            name: team.name,
+            photo: null,
+        })
+        setPhotoPreview(team.photo || null)
+        setFormErrors({})
+        setIsEditTeamOpen(true)
+    }
+
+    const openDeleteDialog = (team: Team) => {
+        setSelectedTeam(team)
+        setIsDeleteTeamOpen(true)
+    }
+
+    const resetForm = () => {
+        setFormData({
+            name: "",
+            photo: null,
+        })
+        setPhotoPreview(null)
+        setFormErrors({})
+        if (fileRef.current) {
+            fileRef.current.value = ""
+        }
+    }
+
+    const handleTeamClick = (teamId: number) => {
+        if (onSelectTeam) {
+            // if team is already selected, deselect it
+            if (selectedTeamId === teamId) {
+                onSelectTeam(null)
+            } else {
+                onSelectTeam(teamId)
+            }
+        }
+    }
 
     return (
         <>
@@ -201,6 +209,11 @@ export default function TeamsCard() {
                     <CardTitle className="text-xl flex items-center gap-2">
                         <Users className="h-5 w-5 text-gray-500" />
                         Teams
+                        {selectedTeamId && onSelectTeam && (
+                            <Button variant="ghost" size="sm" onClick={() => onSelectTeam(null)} className="ml-2 text-xs">
+                                Clear Filter
+                            </Button>
+                        )}
                     </CardTitle>
                     <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -217,11 +230,11 @@ export default function TeamsCard() {
                             <div className="space-y-2">
                                 {teams.map((team) => (
                                     <div key={team.id}
-                                        className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors"
-                                    >
-
+                                        className={`flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50 transition-colors ${selectedTeamId === team.id ? "bg-primary/10 border-primary/30" : ""
+                                            } ${onSelectTeam ? "cursor-pointer" : ""}`}
+                                        onClick={() => handleTeamClick(team.id)}>
                                         <div className="flex items-center gap-3">
-                                            {team.photo && (
+                                            {team.photo ? (
                                                 <div className="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
                                                     <img
                                                         src={`/storage/${team.photo}`}
@@ -229,13 +242,21 @@ export default function TeamsCard() {
                                                         className="h-full w-full object-cover"
                                                     />
                                                 </div>
+                                            ) : (
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full font-semibold bg-gray-300 text-black-700">
+                                                    {team.name.charAt(0).toUpperCase()}
+                                                </div>
                                             )}
                                             <div>
                                                 <h3 className="font-medium">{team.name}</h3>
-                                                <p className="text-muted-foreground text-xs">
-                                                    {team.players_count} players • {team.games_count} games
-                                                </p>
+                                                {selectedTeamId === team.id && (
+                                                    <div className="flex items-center text-primary text-xs mt-1">
+                                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                                        Selected
+                                                    </div>
+                                                )}
                                             </div>
+
                                         </div>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -263,131 +284,129 @@ export default function TeamsCard() {
                 </CardContent>
             </Card>
 
-      {/* Add Team Dialog */}
-      <Dialog open={isAddTeamOpen} onOpenChange={setIsAddTeamOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Team</DialogTitle>
-            <DialogDescription>Enter the details for the new team.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="team-name">Team Name</Label>
-              <Input
-                id="team-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={formErrors.name ? "border-red-500" : ""}
-              />
-              {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="team-photo">Team Photo (optional)</Label>
-              <div className="flex flex-col gap-2">
-                <Input id="team-photo" type="file" accept="image/*" ref={fileRef} onChange={handleFileChange} />
-                {photoPreview && (
-                  <div className="mt-2 max-w-xs">
-                    <img
-                      src={photoPreview || "/placeholder.svg"}
-                      alt="Preview"
-                      className="rounded-md max-h-32 object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddTeamOpen(false)
-                resetForm()
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleAddTeam}>Add Team</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            {/* Add Team Dialog */}
+            <Dialog open={isAddTeamOpen} onOpenChange={setIsAddTeamOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Team</DialogTitle>
+                        <DialogDescription>Enter the details for the new team.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="team-name">Team Name</Label>
+                            <Input
+                                id="team-name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className={formErrors.name ? "border-red-500" : ""}
+                            />
+                            {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="team-photo">Team Photo (optional)</Label>
+                            <div className="flex flex-col gap-2">
+                                <Input id="team-photo" type="file" accept="image/*" ref={fileRef} onChange={handleFileChange} />
+                                {photoPreview && (
+                                    <div className="mt-2 max-w-xs">
+                                        <img
+                                            src={photoPreview || "/placeholder.svg"}
+                                            alt="Preview"
+                                            className="rounded-md max-h-32 object-cover"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsAddTeamOpen(false)
+                                resetForm()
+                            }}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleAddTeam}>Add Team</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-      {/* Edit Team Dialog */}
-      <Dialog open={isEditTeamOpen} onOpenChange={setIsEditTeamOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Team</DialogTitle>
-            <DialogDescription>Update the team details.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-team-name">Team Name</Label>
-              <Input
-                id="edit-team-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={formErrors.name ? "border-red-500" : ""}
-              />
-              {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-team-photo">Team Photo (optional)</Label>
-              <div className="flex flex-col gap-2">
-                <Input id="edit-team-photo" type="file" accept="image/*" onChange={handleFileChange} />
-                {photoPreview && (
-                  <div className="mt-2 max-w-xs">
-                    {photoPreview.startsWith("blob:") ? (
-                      <img
-                        src={photoPreview || "/placeholder.svg"}
-                        alt="New preview"
-                        className="rounded-md max-h-32 object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={`/storage/${photoPreview}`}
-                        alt="Current photo"
-                        className="rounded-md max-h-32 object-cover"
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsEditTeamOpen(false)
-                resetForm()
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEditTeam}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            {/* Edit Team Dialog */}
+            <Dialog open={isEditTeamOpen} onOpenChange={setIsEditTeamOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Team</DialogTitle>
+                        <DialogDescription>Update the team details.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-team-name">Team Name</Label>
+                            <Input
+                                id="edit-team-name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className={formErrors.name ? "border-red-500" : ""}
+                            />
+                            {formErrors.name && <p className="text-red-500 text-sm">{formErrors.name}</p>}
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-team-photo">Team Photo (optional)</Label>
+                            <div className="flex flex-col gap-2">
+                                <Input id="edit-team-photo" type="file" accept="image/*" onChange={handleFileChange} />
+                                {photoPreview && (
+                                    <div className="mt-2 max-w-xs">
+                                        {photoPreview.startsWith("blob:") ? (
+                                            <img
+                                                src={photoPreview || "/placeholder.svg"}
+                                                alt="New preview"
+                                                className="rounded-md max-h-32 object-cover"
+                                            />
+                                        ) : (
+                                            <img
+                                                src={`/storage/${photoPreview}`}
+                                                alt="Current photo"
+                                                className="rounded-md max-h-32 object-cover"
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsEditTeamOpen(false)
+                                resetForm()
+                            }}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleEditTeam}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-      {/* Delete Team Confirmation Dialog */}
-      <Dialog open={isDeleteTeamOpen} onOpenChange={setIsDeleteTeamOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Team</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {selectedTeam?.name}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteTeamOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteTeam}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
+            {/* Delete Team Confirmation Dialog */}
+            <Dialog open={isDeleteTeamOpen} onOpenChange={setIsDeleteTeamOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Team</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete {selectedTeam?.name}? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteTeamOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDeleteTeam}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+    )
 }
