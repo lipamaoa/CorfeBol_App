@@ -20,3 +20,4 @@ Route::apiResource('/stats', StatController::class);
 Route::post('/game-players/update-position', [GamePlayerController::class, 'updatePosition']);
 Route::get('/games/{gameId}/players', [GamePlayerController::class, 'getGamePlayers']);
 Route::get('/games/{gameId}/stats', [StatController::class, 'getGameStats']);
+

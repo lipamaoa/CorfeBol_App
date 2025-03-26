@@ -875,23 +875,6 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
 export default RecordGame
 
-// Função auxiliar para obter o nome completo do tipo de lançamento
-const getFullShotTypeName = (type: string) => {
-  switch (type) {
-    case "LC":
-      return "Short Range"
-    case "LM":
-      return "Medium Range"
-    case "LL":
-      return "Long Range"
-    case "P":
-      return "Layup"
-    case "L":
-      return "Free Throw"
-    case "Pe":
-      return "Penalty"
-    default:
-      return type
-  }
-}
+
+
 
