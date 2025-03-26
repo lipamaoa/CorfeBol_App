@@ -103,6 +103,5 @@ class PlayerAPIController extends Controller
 
         $player->delete();
         return response()->json(null, 204);
-
     }
 }

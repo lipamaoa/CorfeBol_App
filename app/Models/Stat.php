@@ -15,9 +15,7 @@ class Stat extends Model
         'player_id',
         'action_id',
         'success',
-        'event_type',
-        'possession_id',
-        'possession_type',
+        'event_id',
         'description',
         'time'
     ];

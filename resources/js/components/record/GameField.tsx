@@ -3,12 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Player } from '@/pages/games/record';
+import { Player } from '@/types/index';
 import { Plus, Shield, Swords, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface PlayerAvatarProps {
-    player: { name: string; gender: string };
+    player: { id: number, name: string; gender: string };
     onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
     isSelected?: boolean;
 }
@@ -63,7 +63,7 @@ const FieldPosition = ({ position, positionIndex, zone, onSelect, player, isSele
             {!player && isSelectable && <Plus className="h-6 w-6 text-gray-400" />}
             {player && (
                 <PlayerAvatar
-                    player={player}
+                    player={{ ...player, id: positionIndex }}
                     onClick={(e) => {
                         e.stopPropagation();
                         onSelect(zone, positionIndex, player);
