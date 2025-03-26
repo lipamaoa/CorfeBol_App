@@ -59,23 +59,23 @@ export function EventDialog({
   // Define action button colors based on action type - simpler, more muted colors
   const getActionColor = (actionCode: string): string => {
     const colorMap: Record<string, string> = {
-      G: "bg-orange-500", // Goal - Orange
-      A: "bg-emerald-600", // Assist - Emerald
-      S: "bg-teal-500", // Substitution - Teal
-      PS: "bg-amber-500", // Position Switch - Amber
-      D: "bg-indigo-600", // Defense - Indigo
-      RG: "bg-blue-600", // Rebound Goal - Blue
-      RP: "bg-sky-500", // Rebound Pass - Sky
-      LC: "bg-rose-500", // Shot Close - Rose
-      LM: "bg-red-600", // Shot Medium - Red
-      LL: "bg-red-700", // Shot Long - Dark Red
-      P: "bg-pink-500", // Penalty - Pink
-      MP: "bg-violet-500", // Bad Pass - Violet
-      Pa: "bg-slate-600", // Traveling - Slate
-      F: "bg-cyan-600", // Foul - Cyan
-      Pe: "bg-green-700", // Penalty - Green
-      T: "bg-zinc-600", // Timeout - Zinc
-      O: "bg-neutral-500", // Other - Neutral
+      G: "bg-orange-500", 
+      A: "bg-emerald-600", 
+      S: "bg-teal-500", 
+      PS: "bg-amber-500", 
+      D: "bg-indigo-600",
+      RG: "bg-blue-600", 
+      RP: "bg-sky-500", 
+      LC: "bg-rose-500", 
+      LM: "bg-red-600", 
+      LL: "bg-red-700", 
+      P: "bg-pink-500",
+      MP: "bg-violet-500", 
+      Pa: "bg-slate-600", 
+      F: "bg-cyan-600", 
+      Pe: "bg-green-700", 
+      T: "bg-zinc-600", 
+      O: "bg-neutral-500", 
     }
 
     for (const [key, color] of Object.entries(colorMap)) {
@@ -84,29 +84,29 @@ export function EventDialog({
       }
     }
 
-    return "bg-gray-500" // Default color
+    return "bg-gray-500" 
   }
 
   // Map action codes to icons
   const getActionIcon = (actionCode: string) => {
     const iconMap: Record<string, React.ReactNode> = {
-      G: <Award className="h-4 w-4" />, // Goal
-      A: <Heart className="h-4 w-4" />, // Assist
-      S: <UserPlus className="h-4 w-4" />, // Substitution
-      PS: <Repeat className="h-4 w-4" />, // Position Switch
-      D: <Shield className="h-4 w-4" />, // Defense
-      RG: <RefreshCcw className="h-4 w-4" />, // Rebound Goal
-      RP: <RotateCcw className="h-4 w-4" />, // Rebound Pass
-      LC: <Target className="h-4 w-4" />, // Shot Close
-      LM: <Target className="h-4 w-4" />, // Shot Medium
-      LL: <Target className="h-4 w-4" />, // Shot Long
-      P: <Target className="h-4 w-4" />, // Penalty
-      MP: <X className="h-4 w-4" />, // Bad Pass
-      Pa: <AlertCircle className="h-4 w-4" />, // Traveling
-      F: <Whistle className="h-4 w-4" />, // Foul
-      Pe: <Flag className="h-4 w-4" />, // Penalty
-      T: <Timer className="h-4 w-4" />, // Timeout
-      O: <Plus className="h-4 w-4" />, // Other
+      G: <Award className="h-4 w-4" />,
+      A: <Heart className="h-4 w-4" />, 
+      S: <UserPlus className="h-4 w-4" />, 
+      PS: <Repeat className="h-4 w-4" />, 
+      D: <Shield className="h-4 w-4" />, 
+      RG: <RefreshCcw className="h-4 w-4" />, 
+      RP: <RotateCcw className="h-4 w-4" />, 
+      LC: <Target className="h-4 w-4" />, 
+      LM: <Target className="h-4 w-4" />, 
+      LL: <Target className="h-4 w-4" />, 
+      P: <Target className="h-4 w-4" />, 
+      MP: <X className="h-4 w-4" />, 
+      Pa: <AlertCircle className="h-4 w-4" />, 
+      F: <Whistle className="h-4 w-4" />, 
+      Pe: <Flag className="h-4 w-4" />, 
+      T: <Timer className="h-4 w-4" />, 
+      O: <Plus className="h-4 w-4" />, 
     }
 
     for (const [key, icon] of Object.entries(iconMap)) {
@@ -115,7 +115,7 @@ export function EventDialog({
       }
     }
 
-    return <Zap className="h-4 w-4" /> // Default icon
+    return <Zap className="h-4 w-4" /> 
   }
 
   const handleActionClick = (actionId: number) => {
@@ -178,7 +178,7 @@ export function EventDialog({
             </div>
           </div>
 
-          {/* Action Grid with more spacing and no scrollbar */}
+        
           <div className="grid grid-cols-4 gap-3 p-2 rounded-md bg-gray-50 dark:bg-gray-800">
             {actions.map((action) => (
               <button

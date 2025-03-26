@@ -37,5 +37,38 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    [key: string]: unknown; 
 }
+
+
+export interface Player {
+    id: number
+    name: string
+    gender: "male" | "female"
+    position: "attack" | "defense" | "bench"
+    team_id: number
+    positionIndex?: number
+    zone?: "attack" | "defense" | "bench"
+  }
+  
+  export interface Action {
+    id: number
+    code: string
+    description: string
+  }
+  
+  export interface Team {
+    id: number
+    name: string
+    logo_url: string | null
+  }
+  
+  export interface Game {
+    id: number
+    team_a_id: number
+    team_b_id: number
+    teamA: Team
+    teamB: Team
+    score_team_a?: number | null
+    score_team_b?: number | null
+  }

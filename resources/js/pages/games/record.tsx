@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Head, router, usePage } from "@inertiajs/react"
+import { Head, router } from "@inertiajs/react"
 import AppLayout from "@/layouts/app-layout"
 import Navbar from "@/components/navbar"
 import { GameHeader } from "@/components/record/GameHeader"
@@ -13,67 +13,13 @@ import { EventDialog } from "@/components/record/EventDialog"
 import { EditEventDialog } from "@/components/record/EditEventDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-// Importe o serviço no topo do arquivo
+
+// Import the services
 import { updatePlayerPosition as updatePlayerPositionAPI, getGamePlayers } from "@/api/player-api"
+import { createStat, updateStat, deleteStat } from "@/api/create-stat"
+import type {Player, Action, Team, Game} from "@/types/index"
 
-// Define interfaces for our data types
-interface Player {
-  id: number
-  name: string
-  gender: "male" | "female"
-  position: "attack" | "defense"
-  team_id: number
-  positionIndex?: number // Make positionIndex optional
-  zone?: "attack" | "defense" | "bench" // Add zone as an optional property
-}
 
-interface Action {
-  id: number
-  code: string
-  description: string
-}
-
-interface Team {
-  id: number
-  name: string
-  logo_url: string | null
-}
-
-interface Game {
-  id: number
-  team_a_id: number
-  team_b_id: number
-  teamA: Team
-  teamB: Team
-  score_team_a?: number | null
-  score_team_b?: number | null
-}
-
-interface Stat {
-  id: number | string
-  game_id: number
-  player_id: number | null
-  action_id: number
-  success: boolean | null
-  event_type: string
-  possession_id?: number
-  possession_type?: string
-  description?: string
-  time: string
-  created_at?: string
-  player?: Player
-  action?: Action
-}
-
-interface Possession {
-  type: "attack" | "defense"
-  id: number
-  startTime: number
-  events: Stat[]
-}
-
-// Export interfaces for use in other components
-export type { Player, Action, Team, Game, Stat, Possession }
 
 interface RecordGameProps {
   game?: {
@@ -105,20 +51,10 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
   const [teamName, setTeamName] = useState(game?.teamA?.name || "Our Team")
   const [teamALogo, setTeamALogo] = useState(game?.teamA?.logo_url || null)
   const [teamBLogo, setTeamBLogo] = useState(game?.teamB?.logo_url || null)
-  const [opponentName, setOpponentName] = useState(game?.teamB?.name || "Opponent")
   const [players, setPlayers] = useState<Player[]>(initialPlayers?.filter((p) => p.team_id === game.team_a_id) || [])
+  const [opponentName, setOpponentName] = useState(game?.teamB?.name || "Opponent Team")
 
   console.log("Jogadores:" + players)
-
-  // State for tracking possessions
-  const [currentPossession, setCurrentPossession] = useState<Possession>({
-    type: "attack", // 'attack' or 'defense'
-    id: 1,
-    startTime: 0,
-    events: [],
-  })
-  const [possessions, setPossessions] = useState<Possession[]>([])
-  const [possessionCount, setPossessionCount] = useState(1)
 
   // State for event recording
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null)
@@ -332,7 +268,8 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
       player_id: null,
       action_id: actions.find((a) => a.code === "O")?.id || 0,
       success: null,
-      event_type: "period_change",
+      event_id: "1", // Changed from 1 to "1"
+      event_type: "period_change", // Add a default event_type
       description: `Period ${newPeriod} started`,
       time: formatTime(matchTime),
     }
@@ -342,53 +279,15 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
   const handlePlayerClick = (player: Player) => {
     setSelectedPlayer(player)
+    console.log("Player selected:", player)
     setEventDialogOpen(true)
   }
 
-  // Start a new possession
-  const startNewPossession = (type: "attack" | "defense") => {
-    // Finalize the current possession
-    if (currentPossession.events.length > 0) {
-      setPossessions((prev) => [...prev, currentPossession])
-    }
 
-    // Start new possession
-    const newPossessionId = possessionCount + 1
-    setPossessionCount(newPossessionId)
 
-    setCurrentPossession({
-      type,
-      id: newPossessionId,
-      startTime: matchTime,
-      events: [],
-    })
 
-    // Get a valid player ID - use the first player of the appropriate position
-    const positionPlayers = type === "attack" ? getAttackPlayers() : getDefensePlayers()
-
-    const playerId = positionPlayers.length > 0 ? positionPlayers[0].id : players.length > 0 ? players[0].id : 1
-
-    // Record possession change event
-    const eventData: Stat = {
-      game_id: game?.id,
-      player_id: playerId, // Use a valid player ID instead of null
-      action_id: actions.find((a) => a.code === "O")?.id || 0,
-      success: true,
-      event_type: type === "attack" ? "start_attack" : "start_defense",
-      possession_id: newPossessionId,
-      possession_type: type,
-      description: `Start of ${type === "attack" ? "attack" : "defense"}`,
-      time: formatTime(matchTime),
-    }
-
-    recordEvent(eventData)
-  }
-
-  // Apenas a função updatePlayerPosition precisa ser modificada:
-
-  // Add this state to track players that have been positioned at least once
   const [positionedPlayers, setPositionedPlayers] = useState<Set<number>>(new Set())
-  // Add this state to track players that have been positioned at least once
+
   const [initialSetupComplete, setInitialSetupComplete] = useState<boolean>(false)
 
   // Add this function to toggle back to setup mode
@@ -555,180 +454,109 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     loadGamePlayers()
   }, [game?.id]) // Recarregar quando o ID do jogo mudar
 
-  // Add event to current possession
-  const addEventToPossession = (event: Stat) => {
-    setCurrentPossession((prev) => ({
-      ...prev,
-      events: [...prev.events, event],
-    }))
-  }
-
-  // End current possession
-  const endCurrentPossession = (reason: string, playerId?: number) => {
-    // Record end of possession event
-    const eventData: Stat = {
-      game_id: game?.id,
-      player_id: playerId || (players.length > 0 ? players[0].id : 1),
-      action_id: actions.find((a) => a.code === "O")?.id || 0,
-      success: true,
-      event_type: currentPossession.type === "attack" ? "end_attack" : "end_defense",
-      possession_id: currentPossession.id,
-      possession_type: currentPossession.type,
-      description: `End of ${currentPossession.type === "attack" ? "attack" : "defense"}: ${reason}`,
-      time: formatTime(matchTime),
-    }
-
-    recordEvent(eventData)
-
-    // Save current possession
-    setPossessions((prev) => [...prev, currentPossession])
-
-    // Start new possession of opposite type
-    startNewPossession(currentPossession.type === "attack" ? "defense" : "attack")
-  }
-
-  const { route } = usePage().props
-
-  // Função para registrar um evento usando apenas Inertia
-  const recordEvent = (eventData: Stat) => {
+  // Function to record an event using fetch
+  const recordEvent = async (eventData: Stat) => {
     if (isSubmitting) return
 
     setIsSubmitting(true)
 
-    // Criar uma cópia do evento para evitar mutações no original
+    // Create a copy of the event to avoid mutations to the original
     const eventToSend = { ...eventData }
+    console.log("Sending event data:", eventToSend)
 
-    // Criar um ID temporário para feedback imediato no frontend
+    // Create a temporary ID for immediate feedback in the frontend
     const tempEvent: Stat = {
       ...eventToSend,
       id: `temp-${Date.now()}`,
       created_at: new Date().toISOString(),
     }
 
-    // Adicionar evento temporário para feedback imediato no frontend
+    // Add temporary event for immediate feedback in the frontend
     setEvents((prevEvents) => [tempEvent, ...prevEvents])
 
-    // Usar Inertia.post para enviar o evento ao backend
-    router.post(route("stats.store"), eventToSend, {
-      onSuccess: ({ props }) => {
-        const newEvent = props.event as Stat | undefined
+    try {
+      // Send the event to the backend using fetch
+      const result = await createStat(eventToSend)
 
-        if (newEvent) {
-          // Substituir o evento temporário pelo evento real salvo
-          setEvents((prevEvents) => prevEvents.map((event) => (event.id === tempEvent.id ? newEvent : event)))
+      if (result.success && result.event) {
+        const newEvent = result.event
 
-          // Adicionar evento à posse atual, se for válido
-          if (
-            newEvent.event_type !== "start_attack" &&
-            newEvent.event_type !== "end_attack" &&
-            newEvent.event_type !== "start_defense" &&
-            newEvent.event_type !== "end_defense"
-          ) {
-            addEventToPossession(newEvent)
-          }
+        // Replace the temporary event with the real saved event
+        setEvents((prevEvents) => prevEvents.map((event) => (event.id === tempEvent.id ? newEvent : event)))
 
-          // Atualizar placar se for um gol
-          const action = actions.find((a) => a.id === newEvent.action_id)
-          if (action?.code === "G" && newEvent.success) {
-            setScore((prevScore) => {
-              const newScore = prevScore + 1
-              localStorage.setItem(`game_${game?.id}_score`, newScore.toString())
-              return newScore
-            })
-
-            // Se for um gol, encerrar a posse de ataque
-            if (currentPossession.type === "attack") {
-              endCurrentPossession("Goal scored", newEvent.player_id || undefined)
-            }
-          }
-
-          // Verificar eventos que encerram posses
-          if (["LC", "LM", "LL"].includes(action?.code || "")) {
-            if (!newEvent.success && currentPossession.type === "attack") {
-              endCurrentPossession("Shot missed", newEvent.player_id || undefined)
-            }
-          }
-
-          if (["MP", "Pa"].includes(action?.code || "")) {
-            if (currentPossession.type === "attack") {
-              endCurrentPossession("Turnover", newEvent.player_id || undefined)
-            }
-          }
-
-          if (action?.code === "RG" && newEvent.success && currentPossession.type === "defense") {
-            endCurrentPossession("Rebound recovered", newEvent.player_id || undefined)
-          }
+        // Update score if it's a goal
+        const action = actions.find((a) => a.id === newEvent.action_id)
+        if (action?.code === "G" && newEvent.success) {
+          setScore((prevScore) => {
+            const newScore = prevScore + 1
+            localStorage.setItem(`game_${game?.id}_score`, newScore.toString())
+            return newScore
+          })
         }
-      },
-      onError: (errors) => {
-        console.error("Erro ao salvar evento:", errors)
-        alert(`Falha ao salvar evento: ${errors.message || "Erro desconhecido"}`)
+      } else {
+        // Handle error
+        console.error("Error saving event:", result.message)
+        alert(`Failed to save event: ${result.message || "Unknown error"}`)
 
-        // Remover evento temporário em caso de erro
+        // Remove temporary event in case of error
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== tempEvent.id))
-      },
-      onFinish: () => {
-        setIsSubmitting(false)
-      },
-    })
+      }
+    } catch (error) {
+      console.error("Error in recordEvent:", error)
+      alert(`Failed to save event: ${error instanceof Error ? error.message : "Unknown error"}`)
+
+      // Remove temporary event in case of error
+      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== tempEvent.id))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // Function to handle editing an event
-  const handleEditEvent = () => {
+  const handleEditEvent = async () => {
     if (!currentEditEvent || isSubmitting) return
 
     setIsSubmitting(true)
 
-    router.put(route("stats.update", currentEditEvent.id), currentEditEvent, {
-      onSuccess: () => {
-        setEvents((prevEvents) =>
-          prevEvents.map((event) => (event.id === currentEditEvent.id ? currentEditEvent : event)),
-        )
+    try {
+      const result = await updateStat(currentEditEvent.id, currentEditEvent)
+
+      if (result.success && result.event) {
+        setEvents((prevEvents) => prevEvents.map((event) => (event.id === currentEditEvent.id ? result.event : event)))
         setEditEventDialogOpen(false)
         setCurrentEditEvent(null)
-      },
-      onError: (errors) => {
-        console.error("Erro ao atualizar evento:", errors)
-        alert(`Falha ao atualizar evento: ${errors.message || "Erro desconhecido"}`)
-      },
-      onFinish: () => {
-        setIsSubmitting(false)
-      },
-    })
+      } else {
+        console.error("Error updating event:", result.message)
+        alert(`Failed to update event: ${result.message || "Unknown error"}`)
+      }
+    } catch (error) {
+      console.error("Error in handleEditEvent:", error)
+      alert(`Failed to update event: ${error instanceof Error ? error.message : "Unknown error"}`)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
+  // Function to handle deleting an event
   const handleDeleteEvent = async (eventId: number | string) => {
     if (!confirm("Are you sure you want to delete this event?")) return
 
     setIsSubmitting(true)
 
     try {
-      // Encontrar o evento antes de excluí-lo para referência
-      const eventToDelete = events.find((e) => e.id === eventId)
-      if (!eventToDelete) {
-        throw new Error("Event not found in local state")
+      const result = await deleteStat(eventId)
+
+      if (result.success) {
+        // Remove the event from the events list
+        setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId))
+      } else {
+        console.error("Error deleting event:", result.message)
+        alert(`Failed to delete event: ${result.message || "Unknown error"}`)
       }
-
-      console.log("Deleting event:", eventToDelete)
-
-      router.delete(`/stats/${eventId}`, {
-        onSuccess: () => {
-          console.log("Event deleted successfully")
-
-          // Remove the event from the events list
-          setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId))
-        },
-        onError: (errors) => {
-          console.error("Error deleting event:", errors)
-          alert(`Failed to delete event: ${errors.message || "Unknown error"}`)
-        },
-        onFinish: () => {
-          setIsSubmitting(false)
-        },
-      })
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error in handleDeleteEvent:", error)
-      alert(`Failed to delete event: ${error.message || "Unknown error"}`)
+      alert(`Failed to delete event: ${error instanceof Error ? error.message : "Unknown error"}`)
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -741,8 +569,17 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
   // Handle adding a new event
   const handleAddEvent = () => {
-    if (!selectedPlayer || !selectedActionId) {
-      alert("Please select a player and an action")
+    // Check if player is selected
+    if (!selectedPlayer) {
+      console.error("No player selected for event")
+      alert("Please select a player first")
+      return
+    }
+
+    // Check if action is selected
+    if (!selectedActionId) {
+      console.error("No action selected for event")
+      alert("Please select an action")
       return
     }
 
@@ -752,29 +589,13 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     // Create a description if none was provided
     const description = eventDescription || `${player.name} - ${action?.description || "Action"}`
 
-    // Determine event type based on action code
-    let eventType = "other"
-    if (action?.code === "G") eventType = "goal"
-    else if (action?.code === "A") eventType = "assist"
-    else if (action?.code === "RG" || action?.code === "RP") eventType = "rebound"
-    else if (action?.code === "D") eventType = "defense"
-    else if (action?.code === "MP") eventType = "bad_pass"
-    else if (action?.code === "Pa") eventType = "traveling"
-    else if (action?.code === "LC" || action?.code === "LM" || action?.code === "LL" || action?.code === "P")
-      eventType = "shot"
-    else if (action?.code === "F" || action?.code === "Pe") eventType = "foul"
-    else if (action?.code === "S") eventType = "substitution"
-    else if (action?.code === "PS") eventType = "position_switch"
-    else if (action?.code === "T") eventType = "timeout"
-
     const eventData: Stat = {
       game_id: game?.id,
       player_id: player.id,
       action_id: selectedActionId,
       success: eventSuccess,
-      event_type: eventType,
-      possession_id: currentPossession.id,
-      possession_type: currentPossession.type,
+      event_id: "1", // Make sure this is included and is a string
+      event_type: "player_action", // Add a default event_type
       description: description,
       time: formatTime(matchTime),
     }
@@ -855,9 +676,8 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
       player_id: playerId,
       action_id: actions.find((a) => a.code === "PS")?.id || 0,
       success: true,
-      event_type: "position_switch",
-      possession_id: currentPossession.id,
-      possession_type: currentPossession.type,
+      event_id: "1", // Make sure this is included and is a string
+      event_type: "position_switch", // Add a default event_type
       description: "Position switch: attack and defense",
       time: formatTime(matchTime),
     }
@@ -954,15 +774,11 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     teamALogo,
     teamBLogo,
     opponentName,
-    currentPossession,
-    possessions,
     formatTime,
     toggleTimer,
     resetTimer,
     changePeriod,
     handlePlayerClick,
-    startNewPossession,
-    endCurrentPossession,
     switchAttackDefense,
     endGame,
     incrementOpponentScore,
