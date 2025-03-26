@@ -52,6 +52,7 @@ interface FormData {
   team_a_id: string
   team_b_id: string
   date: Date
+  time: string
   location: string
 }
 
@@ -60,9 +61,11 @@ export default function Create() {
   const [formData, setFormData] = useState<FormData>({
     team_a_id: "",
     team_b_id: "",
+    time: "",
     date: date,
     location: "",
   })
+
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -142,22 +145,24 @@ export default function Create() {
 
   const handleAddGame = async () => {
     if (!validateForm()) return
-  
+
     try {
       const data = new FormData()
       data.append("team_a_id", formData.team_a_id)
       data.append("team_b_id", formData.team_b_id)
+      data.append("time", formData.time)
       data.append("date", formData.date.toISOString())
       data.append("location", formData.location)
-  
+
       // Log dos dados que estão sendo enviados para depuração
       console.log("Enviando dados:", {
         team_a_id: formData.team_a_id,
         team_b_id: formData.team_b_id,
+        time: formData.time,
         date: formData.date.toISOString(),
         location: formData.location
       })
-  
+
       // Criar um novo jogo na API
       const response = await fetch("/api/games", {
         method: "POST",
@@ -166,10 +171,10 @@ export default function Create() {
           'Accept': 'application/json'
         }
       })
-  
+
       // Capturar o texto da resposta para análise
       const responseText = await response.text()
-      
+
       // Tentar converter para JSON se possível
       let responseData
       try {
@@ -178,7 +183,7 @@ export default function Create() {
         // Se não for JSON válido, manter como texto
         responseData = responseText
       }
-      
+
       // Log da resposta completa para depuração
       console.log("Resposta completa:", {
         status: response.status,
@@ -186,28 +191,28 @@ export default function Create() {
         headers: Object.fromEntries([...response.headers]),
         data: responseData
       })
-  
+
       if (!response.ok) {
         // Extrair mensagem de erro do JSON se disponível
-        const errorMessage = responseData && responseData.message 
-          ? responseData.message 
+        const errorMessage = responseData && responseData.message
+          ? responseData.message
           : `Erro do servidor: ${response.status}`
-        
+
         throw new Error(errorMessage)
       }
-  
+
       // Se chegou aqui, a resposta é válida
       setGames(Array.isArray(responseData) ? responseData : [])
-  
+
       // Fechar o dialog e resetar o formulário
       resetForm()
       setActiveTab("calendar")
-      
+
       // Mostrar mensagem de sucesso
       alert("Jogo criado com sucesso!")
     } catch (error) {
       console.error("Erro completo:", error)
-      alert(`Falha ao criar jogo: ${error.message}`)
+      alert(`Falha ao criar jogo: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
 
@@ -216,24 +221,35 @@ export default function Create() {
 
     try {
       const data = new FormData()
-      data.append("teamA", formData.team_a_id)
-      data.append("teamB", formData.team_b_id)
+      data.append("team_a_id", formData.team_a_id)
+      data.append("team_b_id", formData.team_b_id)
+      data.append("time", formData.time)
       data.append("date", formData.date.toISOString())
       data.append("location", formData.location)
       data.append("_method", "PUT")
 
       //Enviar solicitação para a API
       const response = await fetch(`/api/games/${selectedGame.id}`, {
-        method: "POST",
+        method: "PUT",
         body: data,
+        headers: {
+          'Accept': 'application/json'
+        },
       })
 
       if (!response.ok) {
-        throw new Error("Error Server: " + response.status)
+        const errorText = await response.text();
+        console.error("Error response text:", errorText);
+        throw new Error("Failed to update game");
       }
 
-      //Obter os dados do jogo atualizado
-      const updatedGame = await response.json()
+      let updatedGame;
+      try {
+        updatedGame = await response.json();
+      } catch (error) {
+        console.error("Failed to parse server response as JSON:", error);
+        throw new Error("Failed to parse server response as JSON");
+      }
 
       //Atualizar o estado de games
       setGames(games.map((game) => (game.id === updatedGame.id ? updatedGame : game)))
@@ -275,6 +291,7 @@ export default function Create() {
     setFormData({
       team_a_id: game.team_a_id?.toString() || "",
       team_b_id: game.team_b_id?.toString() || "",
+      time: game.time || "",
       date: parseISO(game.date),
       location: game.location || "",
     })
@@ -291,6 +308,7 @@ export default function Create() {
     setFormData({
       team_a_id: "",
       team_b_id: "",
+      time: "",
       date: new Date(),
       location: "",
     })
@@ -588,6 +606,16 @@ export default function Create() {
                         }}
                       />
                     </div>
+                    {/**Time Input */}
+                    <div>
+                        <Label htmlFor="edit-time">Game Time</Label>
+                        <Input
+                            id="edit-time"
+                            type="time"
+                            value={formData.time}
+                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                        />
+                    </div>
                     <div className="grid gap-2">
                       <Label htmlFor="edit-location">Location</Label>
                       <Input
@@ -713,6 +741,17 @@ export default function Create() {
                           />
                           {formErrors.location && <p className="text-sm text-red-500">{formErrors.location}</p>}
                         </div>
+
+                        {/* Time Input */}
+                        <div className="space-y-2">
+                          <Label htmlFor="time">Game Time</Label>
+                          <Input
+                            id="time"
+                            type="time"
+                            value={formData.time}
+                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                          />
+                      </div>
                       </div>
 
                       <div className="flex justify-end space-x-4">

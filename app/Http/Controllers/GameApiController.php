@@ -28,14 +28,18 @@ class GameApiController extends Controller
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
             'date' => 'required|date',
+            'time' => 'required|date_format:H:i', //hora do jogo
             'location' => 'nullable|string|max:255',
         ]);
+
+        //para juntar data e hora na BD
+        $datetime = $request->date . ' ' . $request->time . ':00';
 
 
         $game= Game::create([
             'team_a_id' => $request->team_a_id,
             'team_b_id' => $request->team_b_id,
-            'date' => $request->date,
+            'date' => $datetime,
             'location' => $request->location
         ]);
 
