@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EventAPIController;
 use App\Http\Controllers\PlayerAPIController;
 use App\Http\Controllers\TeamAPIController;
 use App\Http\Controllers\GameApiController;
@@ -16,6 +17,7 @@ Route::apiResource('/teams', TeamAPIController::class);
 Route::apiResource('/players', PlayerAPIController::class);
 Route::apiResource('/games', GameAPIController::class);
 Route::apiResource('/stats', StatController::class);
+Route::apiResource('/events', EventAPIController::class);
 
 Route::post('/game-players/update-position', [GamePlayerController::class, 'updatePosition']);
 Route::get('/games/{gameId}/players', [GamePlayerController::class, 'getGamePlayers']);
