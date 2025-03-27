@@ -11,26 +11,9 @@ import { Head } from "@inertiajs/react"
 import { format, parseISO } from "date-fns"
 import { ArrowRight, Calendar, Clock, MapPin, Trophy, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
+import {Game} from "@/types/index"
 
-interface Team {
-  id: number
-  name: string
-  logo_url?: string | null
-}
 
-interface Game {
-  id: number
-  team_a_id: number
-  team_b_id: number
-  team_a: Team // This should be populated from the relationship
-  team_b: Team // This should be populated from the relationship
-  date: string
-  time?: string
-  location?: string
-  status: string
-  score_team_a?: number
-  score_team_b?: number
-}
 
 interface GamesProps {
   games: Game[]
@@ -106,9 +89,9 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
     console.log("Initial games:", initialGames)
     if (initialGames.length > 0) {
       console.log("First initial game:", initialGames[0])
-      console.log("Initial Team A:", initialGames[0].team_a.name
+      console.log("Initial Team A:", initialGames[0].teamA.name
       )
-      console.log("Initial Team B:", initialGames[0].team_b.name)
+      console.log("Initial Team B:", initialGames[0].teamB.name)
     }
     setGames(initialGames)
   }, [initialGames])
@@ -166,11 +149,11 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                         <CardHeader className="bg-blue-50 pb-2">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg">
-                            {game.team_a.name} vs {game.team_b.name}
+                            {game.teamA.name} vs {game.teamB.name}
                             </CardTitle>
                             <Badge
                               variant={
-                                game.status === "completed"
+                                game.status === "complete"
                                   ? "success"
                                   : game.status === "in_progress"
                                     ? "default"
@@ -204,7 +187,7 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                               </div>
                             )}
 
-                            {game.status === "completed" && (
+                            {game.status === "complete" && (
                               <div className="mt-2 flex items-center justify-center rounded-md bg-gray-50 py-2">
                                 <div className="text-center">
                                   <div className="flex items-center justify-center gap-4">
@@ -230,7 +213,7 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                                 </Button>
                               )}
 
-                              {game.status === "completed" && (
+                              {game.status === "complete" && (
                                 <Button
                                   variant="outline"
                                   onClick={() => navigateTo(`/stats?game_id=${game.id}`)}

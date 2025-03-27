@@ -1,4 +1,4 @@
-import type { Stat } from "@/pages/games/record"
+import type { Stat } from "@/types/index"
 
 interface ApiResponse {
   success: boolean
