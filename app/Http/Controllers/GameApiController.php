@@ -13,10 +13,35 @@ class GameApiController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $games = Game::with(['teamA', 'teamB'])->get();
+        $status = $request->query('status', 'all');
+      
+        
+        $query = Game::with(['teamA', 'teamB']);
+       
+        
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+        
+        $games = $query->orderBy('date', 'desc')->get();
+
+         // Log the response for debugging
+         Log::info('Games fetched with teams:', [
+            'count' => $games->count(),
+            'first_game' => $games->first() ? [
+                'id' => $games->first()->id,
+                'teamA' => $games->first()->teamA ? $games->first()->teamA->name : 'No Team A',
+                'teamB' => $games->first()->teamB ? $games->first()->teamB->name : 'No Team B',
+            ] : 'No games'
+        ]);
+      
+        
+        
         return response()->json($games);
+        
     }
 
     /**

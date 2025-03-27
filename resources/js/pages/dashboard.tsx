@@ -20,26 +20,15 @@ import {
 import { Link } from "@inertiajs/react"
 import Navbar from "@/components/navbar"
 import { useEffect, useState } from "react"
+import{Game, Stat} from "@/types/index"
 
-interface Game {
-    id: number
-    team_a_id?: number
-    team_b_id?: number
-    date: string
-    time?: string
-    location: string
-    team_a: Team
-    team_b: Team
-  }
 
-  interface FormData {
-    team_a_id: string
-    team_b_id: string
-    date: Date
-    location: string
-  }
+interface DashboardProps {
+    nextGame: Game | null;
+    stats: Stat
+}
 
-export default function Dashboard({ nextGame, stats }) {
+export default function Dashboard({ nextGame, stats }: DashboardProps) {
     // State variables for teams and players
     const [teams, setTeams] = useState([])
     const [players, setPlayers] = useState([])
@@ -141,50 +130,13 @@ export default function Dashboard({ nextGame, stats }) {
   nextGame = games.length > 0 ? games[0] : null
   const daysUntilGame = nextGame ? getDaysUntilGame(nextGame.date) : 0
 
-   //Quick stats for the dashboard
-  const quickStats = [
-    {
-      title: "Teams",
-      value: stats?.total_teams || 0,
-      icon: <Trophy className="h-5 w-5 text-primary" />,
-    },
-    {
-      title: "Players",
-      value: stats?.total_players || 0,
-      icon: <Users className="h-5 w-5 text-primary" />,
-    },
-    {
-      title: "Games",
-      value: stats?.total_games || 0,
-      icon: <Activity className="h-5 w-5 text-primary" />,
-    },
-    {
-      title: "Goals",
-      value: (stats?.goals_by_position?.attack || 0) + (stats?.goals_by_position?.defense || 0),
-      icon: <TrendingUp className="h-5 w-5 text-primary" />,
-    },
-  ]
+   
 
     return (
         <>
             <Navbar />
-            <AppLayout breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }]}>
+            <AppLayout breadcrumbs={[{ title: "Dashboard", href: "/dashboard" }]}>
                 <Head title="Dashboard" />
-
-                {/* Quick Stats Overview */}
-                <div className="grid gap-4 md:grid-cols-4 mb-6">
-                    {quickStats.map((stat, index) => (
-                        <Card key={index}>
-                            <CardContent className="flex items-center gap-4 p-4">
-                                <div className="rounded-full bg-primary/10 p-2">{stat.icon}</div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                                    <h3 className="text-2xl font-bold">{stat.value}</h3>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
 
                 {/* Next Game Card */}
                 <div className="space-y-6">
