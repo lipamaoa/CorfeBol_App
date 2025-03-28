@@ -52,7 +52,7 @@ interface FormData {
   team_a_id: string
   team_b_id: string
   date: Date
-  time: string
+  time: string // Ensure this is explicitly defined as a string
   location: string
 }
 
@@ -135,6 +135,21 @@ export default function Create() {
       errors.team_b_id = "Away team must be different from home team"
     }
 
+    //ERROS DE DATA E HORA
+    if (!formData.time) {
+      errors.time = "Game time is required"
+    }
+
+    if (!formData.time.match(/^\d{2}:\d{2}$/)) {
+      errors.time = "Game time must be in HH:mm format"
+    }
+
+    if (!formData.date) {
+      errors.date = "Game date is required"
+    } else if (formData.date < new Date()) {
+      errors.date = "Game date must be in the future"
+    }
+
     if (!formData.location.trim()) {
       errors.location = "Location is required"
     }
@@ -143,6 +158,7 @@ export default function Create() {
     return Object.keys(errors).length === 0
   }
 
+  //EDITADO PARA ADD TEMPO
   const handleAddGame = async () => {
     if (!validateForm()) return
 
@@ -216,17 +232,34 @@ export default function Create() {
     }
   }
 
+  //EDITADO PARA ADD TEMPO
   const handleEditGame = async () => {
     if (!selectedGame || !validateForm()) return
 
+    // Verificar se os campos obrigatórios existem
+    if (!formData.team_a_id || !formData.team_b_id || !formData.date || !formData.time) {
+        console.error("Campos obrigatórios estão faltando", formData);
+        return;
+    }
+
     try {
+        // Formatar data - garantir formato YYYY-MM-DD
+        const formattedDatetime = formData.date instanceof Date
+            ? `${formData.date.toLocaleDateString('en-CA', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).replace(/\//g, '-')} ${formData.time}:00`
+            : `${formData.date} ${formData.time}:00`;
+
       const data = new FormData()
-      data.append("team_a_id", formData.team_a_id)
-      data.append("team_b_id", formData.team_b_id)
-      data.append("time", formData.time)
-      data.append("date", formData.date.toISOString())
+      data.append("team_a_id", formData.team_a_id.toString())
+      data.append("team_b_id", formData.team_b_id.toString())
+      data.append("datetime", formattedDatetime) // Mudança aqui
       data.append("location", formData.location)
       data.append("_method", "PUT")
+
+      console.log("Dados do jogo a serem enviados:", data);
 
       //Enviar solicitação para a API
       const response = await fetch(`/api/games/${selectedGame.id}`, {
@@ -242,6 +275,7 @@ export default function Create() {
         console.error("Error response text:", errorText);
         throw new Error("Failed to update game");
       }
+
 
       let updatedGame;
       try {
@@ -608,7 +642,7 @@ export default function Create() {
                     </div>
                     {/**Time Input */}
                     <div>
-                        <Label htmlFor="edit-time">Game Time</Label>
+                        <Label htmlFor="edit-time">Time</Label>
                         <Input
                             id="edit-time"
                             type="time"
@@ -744,7 +778,7 @@ export default function Create() {
 
                         {/* Time Input */}
                         <div className="space-y-2">
-                          <Label htmlFor="time">Game Time</Label>
+                          <Label htmlFor="time">Time</Label>
                           <Input
                             id="time"
                             type="time"
