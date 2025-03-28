@@ -89,9 +89,9 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
     console.log("Initial games:", initialGames)
     if (initialGames.length > 0) {
       console.log("First initial game:", initialGames[0])
-      console.log("Initial Team A:", initialGames[0].teamA.name
+      console.log("Initial Team A:", initialGames[0].team_a.name
       )
-      console.log("Initial Team B:", initialGames[0].teamB.name)
+      console.log("Initial Team B:", initialGames[0].team_b.name)
     }
     setGames(initialGames)
   }, [initialGames])
@@ -145,11 +145,12 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredGames.map((game) => (
+                        console.log("Game:", filteredGames),
                       <Card key={game.id} className="overflow-hidden">
                         <CardHeader className="bg-blue-50 pb-2">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg">
-                            {game.teamA.name} vs {game.teamB.name}
+                            {game.team_a.name} vs {game.team_a.name}
                             </CardTitle>
                             <Badge
                               variant={

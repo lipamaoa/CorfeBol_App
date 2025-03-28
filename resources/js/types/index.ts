@@ -64,6 +64,8 @@ export interface Player {
   }
   
   export interface Game {
+    team_b: Team;
+    team_a: Team;
     id: number
     team_a_id: number
     team_b_id: number
@@ -84,6 +86,14 @@ export interface Player {
     event_id: number
     description: string
     time: string
+  }
+
+
+  export interface Event {
+    id: number
+    name: string
+    player_id: number
+    
   }
 
   
