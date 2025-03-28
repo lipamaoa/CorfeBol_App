@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, Plus } from "lucide-react"
 import type { Player, Game, Stat, Action } from "@/types/index"
 import { getEventIcon, getEventColor } from "@/utils/eventHelpers"
+
 
 interface EventLogProps {
   gameContext: {

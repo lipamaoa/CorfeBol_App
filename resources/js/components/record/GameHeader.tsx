@@ -143,6 +143,21 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
       // Se já existe uma fase ativa, finalize-a primeiro
       if (currentPhaseEvent) {
         await endEvent(currentPhaseEvent.id)
+
+
+        // Registrar evento de finalização no log
+        const endEventData: Stat = {
+          game_id: game.id,
+          player_id: null,
+          action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
+          success: null,
+          event_id: currentPhaseEvent.id,
+          event_type: "phase_end",
+          description: `Fase de ${currentPhaseEvent.name === "attack" ? "ataque" : "defesa"} finalizada`,
+          time: formatTime(matchTime),
+        }
+        await recordEvent(endEventData)
+      
       }
 
       // Obter um player_id válido
@@ -151,8 +166,10 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
       const response = await createEvent({
         name: phaseName,
         game_id: game.id,
-        player_id: playerId, // Adicionar player_id
+        player_id: playerId, 
       })
+
+      console.log("Hello", response)
 
       if (response.success) {
         setCurrentPhaseEvent(response.event)
@@ -164,6 +181,18 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
           setGameStarted(true)
           if (!isRunning) toggleTimer()
         }
+
+        const startEventData: Stat = {
+          game_id: game.id,
+          player_id: null,
+          action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
+          success: null,
+          event_id: response.event.id,
+          event_type: "phase_start",
+          description: `Fase de ${phaseName === "attack" ? "ataque" : "defesa"} iniciada`,
+          time: formatTime(matchTime),
+        }
+        await recordEvent(startEventData)
 
         if (gameContext.onPhaseChange) {
           gameContext.onPhaseChange()
@@ -186,6 +215,20 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
       const response = await endEvent(currentPhaseEvent.id)
 
       if (response.success) {
+
+         // Registrar evento de finalização no log
+         const endEventData: Stat = {
+          game_id: game.id,
+          player_id: null,
+          action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
+          success: null,
+          event_id: currentPhaseEvent.id,
+          event_type: "phase_end",
+          description: `Fase de ${currentPhaseEvent.name === "attack" ? "ataque" : "defesa"} finalizada`,
+          time: formatTime(matchTime),
+        }
+        await recordEvent(endEventData)
+
         setCurrentPhaseEvent(null)
         toast.success("Fase finalizada!")
       }

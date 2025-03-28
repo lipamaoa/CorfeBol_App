@@ -693,7 +693,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
   }
 
   // ============ Switch Attack/Defense in Bulk ============
-  const switchAttackDefense = () => {
+  const switchAttackDefense = async() => {
     const attackPlayers = getAttackPlayers()
     const defensePlayers = getDefensePlayers()
 
@@ -708,6 +708,27 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     })
 
     setPlayers(updated)
+
+
+    // Se existe uma fase ativa, finalize-a e registre no log
+    if (currentPhaseEvent) {
+      try {
+        // Registrar evento de finalização no log
+        const endEventData: Stat = {
+          game_id: game?.id,
+          player_id: null,
+          action_id: actions.find((a) => a.code === "O")?.id || 0,
+          success: null,
+          event_id: currentPhaseEvent.id,
+          event_type: "phase_end",
+          description: `Fase de ${currentPhaseEvent.name === "attack" ? "ataque" : "defesa"} finalizada (troca de posições)`,
+          time: formatTime(matchTime),
+        }
+        await recordEvent(endEventData)
+      } catch (error) {
+        console.error("Erro ao registrar finalização de fase:", error)
+      }
+    }
 
     // gravar no backend
     const playerId =

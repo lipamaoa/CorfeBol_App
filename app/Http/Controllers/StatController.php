@@ -26,9 +26,9 @@ class StatController extends Controller
      {
          $validated = $request->validate([
              'game_id' => 'required|exists:games,id',
-             'player_id' => 'required|exists:players,id',
+             'player_id' => 'nullable|exists:players,id',
              'action_id' => 'required|exists:actions,id',
-             'success' => 'required|boolean',
+             'success' => 'nullable|boolean',
              'event_id' => 'nullable|exists:events,id',
              'description' => 'nullable|string',
              'time' => 'nullable|string',
