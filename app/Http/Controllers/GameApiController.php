@@ -28,18 +28,13 @@ class GameApiController extends Controller
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
             'date' => 'required|date',
-            'time' => 'required|date_format:H:i', //hora do jogo
             'location' => 'nullable|string|max:255',
         ]);
-
-        //para juntar data e hora na BD
-        $datetime = $request->date . ' ' . $request->time . ':00';
-
 
         $game= Game::create([
             'team_a_id' => $request->team_a_id,
             'team_b_id' => $request->team_b_id,
-            'date' => $datetime,
+            'date' => $request->date,
             'location' => $request->location
         ]);
 
@@ -76,25 +71,16 @@ class GameApiController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
     {
         $game = Game::findOrFail($id);
-        //dd($request->all());
 
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
-            'datetime' => 'required|date_format:Y-m-d H:i:s', // Mudança aqui
+            'date' => 'required|date', // Mudança aqui
             'location' => 'nullable|string|max:255',
             'status' => 'string|max:50'
         ]);
@@ -109,7 +95,7 @@ class GameApiController extends Controller
         // Atualizar campos diretamente
         $game->team_a_id = $request->team_a_id;
         $game->team_b_id = $request->team_b_id;
-        $game->datetime = $request->datetime;
+        $game->date = $request->date;
         $game->location = $request->location ?? null;
 
         // Verificar status opcional
