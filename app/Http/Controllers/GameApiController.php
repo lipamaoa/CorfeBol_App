@@ -56,7 +56,6 @@ class GameApiController extends Controller
             'location' => 'nullable|string|max:255',
         ]);
 
-
         $game= Game::create([
             'team_a_id' => $request->team_a_id,
             'team_b_id' => $request->team_b_id,
@@ -97,14 +96,6 @@ class GameApiController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
@@ -114,16 +105,28 @@ class GameApiController extends Controller
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
-            'date' => 'required|date',
+            'date' => 'required|date', // Mudança aqui
             'location' => 'nullable|string|max:255',
             'status' => 'string|max:50'
         ]);
 
-        if ($request->has('team_a_id')) $game->team_a_id = $request->team_a_id;
+
+       /*  if ($request->has('team_a_id')) $game->team_a_id = $request->team_a_id;
         if ($request->has('team_b_id')) $game->team_b_id = $request->team_b_id;
-        if ($request->has('date')) $game->date = $request->date;
+        if ($request->has('date')) $game->datetime = $request->datetime;
         if ($request->has('location')) $game->location = $request->location;
-        if ($request->has('status')) $game->status = $request->status;
+        if ($request->has('status')) $game->status = $request->status; */
+
+        // Atualizar campos diretamente
+        $game->team_a_id = $request->team_a_id;
+        $game->team_b_id = $request->team_b_id;
+        $game->date = $request->date;
+        $game->location = $request->location ?? null;
+
+        // Verificar status opcional
+        if ($request->has('status')) {
+        $game->status = $request->status;
+        }
 
         $game->save();
 

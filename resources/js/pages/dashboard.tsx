@@ -70,9 +70,9 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
             console.error("Error fetching Players:", error)
         }
     }
-    
+
     const updateGames = async () => {
-        
+
         try {
             const response = await fetch("/api/games/", {
                 method: "GET",
@@ -187,7 +187,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
 
                                                     <div className="flex items-center gap-1.5">
                                                         <Clock className="h-4 w-4 text-primary" />
-                                                        <span className="text-sm">{nextGame?.time || "Time not set"}</span>
+                                                        <span className="text-sm">{nextGame?.date.substring(11, 16) || "Time not set"}</span>
                                                     </div>
 
                                                     <div className="flex items-center gap-1.5">
