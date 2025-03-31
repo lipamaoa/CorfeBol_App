@@ -785,7 +785,10 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
         localStorage.removeItem(`game_${game?.id}_score`)
         localStorage.removeItem(`game_${game?.id}_opponent_score`)
 
-        // Redirecionar para a página de dashboard ou outra página apropriada
+      
+        alert("Game ended!Final Score: " + score + " - " + opponentScore)
+
+        
         window.location.href = "/dashboard"
       } else {
         // Processar erro da resposta
@@ -794,8 +797,8 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
       }
     } catch (error) {
       // Tratar erros
-      alert(`Falha ao encerrar o jogo: ${error instanceof Error ? error.message : "Erro desconhecido"}`)
-      console.error("Erro ao finalizar jogo:", error)
+      alert(`Failled to end the game: ${error instanceof Error ? error.message : "Erro desconhecido"}`)
+      console.error("Error ending the game:", error)
     }
   }
 

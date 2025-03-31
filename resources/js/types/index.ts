@@ -73,7 +73,7 @@ export interface Player {
     teamB: Team
     score_team_a?: number | null
     score_team_b?: number | null
-    status: "scheduled" | "in_progress" | "complete"
+    status: "scheduled" | "in_progress" | "completed"
   }
 
 
