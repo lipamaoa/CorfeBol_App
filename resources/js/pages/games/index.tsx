@@ -12,6 +12,7 @@ import { format, parseISO } from "date-fns"
 import { ArrowRight, Calendar, Clock, MapPin, Trophy, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type { Game } from "@/types/index"
+import { GameReportDialog } from "@/components/record/GameReportDialog"
 
 interface GamesProps {
   games: Game[]
@@ -23,6 +24,10 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
   const [games, setGames] = useState<Game[]>(initialGames)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // State for the game report dialog
+  const [reportDialogOpen, setReportDialogOpen] = useState(false)
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null)
 
   const filteredGames = activeTab === "all" ? games : games.filter((game) => game.status === activeTab)
 
@@ -83,6 +88,12 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
   const navigateTo = (url: string) => {
     // Simple navigation function
     window.location.href = url
+  }
+
+  // Function to handle opening the game report dialog
+  const handleViewStatistics = (game: Game) => {
+    setSelectedGame(game)
+    setReportDialogOpen(true)
   }
 
   // Effect to update games when initial props change
@@ -221,11 +232,7 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                               )}
 
                               {game.status === "completed" && (
-                                <Button
-                                  variant="outline"
-                                  onClick={() => navigateTo(`/stats?game_id=${game.id}`)}
-                                  className="w-full"
-                                >
+                                <Button variant="outline" onClick={() => handleViewStatistics(game)} className="w-full">
                                   View Statistics
                                 </Button>
                               )}
@@ -240,6 +247,10 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
             </Tabs>
           </div>
         </div>
+
+        {/* Game Report Dialog */}
+        <GameReportDialog open={reportDialogOpen} onOpenChange={setReportDialogOpen} game={selectedGame} />
+
         <Footer />
       </AppLayout>
     </>
