@@ -30,3 +30,5 @@ Route::put('/events/{id}/end-phase', [EventAPIController::class, 'endPhase']);
 Route::get('/games/{gameId}/current-phase', [EventAPIController::class, 'getCurrentPhase']);
 Route::get('/events/game/{gameId}/phases', [EventAPIController::class, 'getGamePhases']);
 
+// Add this route to your existing routes
+Route::get('/games/{id}/report', [GameAPIController::class, 'getGameReport']);

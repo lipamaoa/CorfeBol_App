@@ -74,6 +74,7 @@ export interface Player {
     score_team_a?: number | null
     score_team_b?: number | null
     status: "scheduled" | "in_progress" | "completed"
+    
   }
 
 
@@ -93,6 +94,9 @@ export interface Player {
     id: number
     name: string
     player_id: number
+    game_id: number
+    start_time: string
+    end_time: string
     
   }
 

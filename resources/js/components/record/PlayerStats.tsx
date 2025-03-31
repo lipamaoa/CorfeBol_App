@@ -1,133 +1,149 @@
-'use client';
+"use client"
 
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import type { Action, Game, Player, Stat } from '@/pages/games/record';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Player } from "@/types"
+import { calculatePlayerAttackStats, calculatePlayerDefenseStats } from "@/utils/stats-calculator"
+import { useState, useEffect } from "react"
 
-interface PlayerStatsProps {
-    gameContext: {
-        game: Game;
-        events: Stat[];
-        players: Player[];
-        actions: Action[];
-        handlePlayerClick: (player: Player) => void;
-    };
-}
+export function PlayerStats({ gameContext }) {
+  const { players, events, actions, getAttackPlayers, getDefensePlayers } = gameContext
+  const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [attackStats, setAttackStats] = useState(null)
+  const [defenseStats, setDefenseStats] = useState(null)
+  const [activeTab, setActiveTab] = useState("attack")
 
-export function PlayerStats({ gameContext }: PlayerStatsProps) {
-    const { events, players, actions, handlePlayerClick } = gameContext;
+  useEffect(() => {
+    if (selectedPlayer && events && actions) {
+      // Calcular estatísticas de ataque
+      const attack = calculatePlayerAttackStats(selectedPlayer.id, selectedPlayer.name, events, actions)
+      setAttackStats(attack)
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Player Stats</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-[500px]">
-                    <div className="space-y-4">
-                        {players.filter(player=>player).map((player) => {
+      // Calcular estatísticas de defesa
+      const defense = calculatePlayerDefenseStats(selectedPlayer.id, selectedPlayer.name, events, actions)
+      setDefenseStats(defense)
+    }
+  }, [selectedPlayer, events, actions])
 
-                           
-                            // Calculate player stats from events
+  // Selecionar o primeiro jogador por padrão
+  useEffect(() => {
+    if (players && players.length > 0 && !selectedPlayer) {
+      setSelectedPlayer(players[0])
+    }
+  }, [players, selectedPlayer])
 
-                            const playerEvents = events.filter((e) => e.player_id === player.id);
-                            console.log(player);
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle>Player Statistics</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Select Player</label>
+          <select
+            className="w-full p-2 border rounded"
+            value={selectedPlayer?.id || ""}
+            onChange={(e) => {
+              const playerId = Number(e.target.value)
+              const player = players.find((p) => p.id === playerId)
+              setSelectedPlayer(player)
+            }}
+          >
+            {players.map((player: Player) => (
+              <option key={player.id} value={player.id}>
+                {player.name} ({player.position})
+              </option>
+            ))}
+          </select>
+        </div>
 
-                            // Goals
-                            const goals = playerEvents.filter((e) => {
-                                const action = actions.find((a) => a.id === e.action_id);
-                                return action?.code === 'G' && e.success;
-                            }).length;
+        {selectedPlayer && (
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="attack">Attack</TabsTrigger>
+              <TabsTrigger value="defense">Defense</TabsTrigger>
+            </TabsList>
 
-                            // Shots
-                            const shots = playerEvents.filter((e) => {
-                                const action = actions.find((a) => a.id === e.action_id);
-                                return (
-                                    action?.code === 'LC' ||
-                                    action?.code === 'LM' ||
-                                    action?.code === 'LL' ||
-                                    action?.code === 'P' ||
-                                    action?.code === 'G'
-                                );
-                            }).length;
-
-                            // Offensive efficiency
-                            const offensiveEfficiency = shots > 0 ? Math.round((goals / shots) * 100) : 0;
-
-                            // Turnovers
-                            const turnovers = playerEvents.filter((e) => {
-                                const action = actions.find((a) => a.id === e.action_id);
-                                return action?.code === 'MP' || action?.code === 'Pa';
-                            }).length;
-
-                            // Defensive statistics
-                            const defensiveActions = playerEvents.filter((e) => {
-                                const action = actions.find((a) => a.id === e.action_id);
-                                return action?.code === 'D' || ((action?.code === 'RG' || action?.code === 'RP') && player.position === 'defense');
-                            });
-
-                            const successfulDefense = defensiveActions.filter((e) => e.success).length;
-                            const defensiveEfficiency =
-                                defensiveActions.length > 0 ? Math.round((successfulDefense / defensiveActions.length) * 100) : 0;
-
-                            return (
-                                <div key={player.id} className="flex flex-col gap-2 rounded-lg border p-3" onClick={() => handlePlayerClick(player)}>
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                                                player.gender === 'male' ? 'bg-blue-100' : 'bg-pink-100'
-                                            }`}
-                                        >
-                                            {player.name ? player.name.charAt(0) : '?'}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="font-medium">{player.name}</div>
-                                            <div className="text-muted-foreground text-xs">
-                                                <span className={player.position === 'attack' ? 'text-green-600' : 'text-blue-600'}>
-                                                    {/* {player.position.charAt(0).toUpperCase() + player.position.slice(1)} */}
-                                                </span>{' '}
-                                                • {player.gender.charAt(0).toUpperCase() + player.gender.slice(1)}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                        <div className="flex flex-col">
-                                            <span className="text-muted-foreground">Goals</span>
-                                            <span className="font-medium">{goals}</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-muted-foreground">Offensive Efficiency</span>
-                                            <span className="font-medium">{offensiveEfficiency}%</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-muted-foreground">Defensive Efficiency</span>
-                                            <span className="font-medium">{defensiveEfficiency}%</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-muted-foreground">Turnovers</span>
-                                            <span className="font-medium">{turnovers}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-1 flex gap-2">
-                                        <Badge variant="outline" className="bg-green-50">
-                                            {goals} G
-                                        </Badge>
-                                        <Badge variant="outline" className="bg-blue-50">
-                                            {shots} S
-                                        </Badge>
-                                        <Badge variant="outline" className="bg-red-50">
-                                            {turnovers} T
-                                        </Badge>
-                                    </div>
-                                </div>
-                            );
-                        })}
+            <TabsContent value="attack" className="space-y-4">
+              {attackStats ? (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-sm font-medium">Goals</p>
+                      <p className="text-2xl font-bold">{attackStats.goals}</p>
                     </div>
-                </ScrollArea>
-            </CardContent>
-        </Card>
-    );
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-sm font-medium">Shots</p>
+                      <p className="text-2xl font-bold">{attackStats.shots}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="text-sm font-medium">Shooting Efficiency</p>
+                    <p className="text-2xl font-bold">{attackStats.shootingEfficiency}%</p>
+                    <p className="text-xs text-gray-500">(Goals / Total Shots) × 100</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-gray-50 p-3 rounded">
+                      <p className="text-sm font-medium">Rebounds Won</p>
+                      <p className="text-2xl font-bold">{attackStats.reboundsWon}</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded">
+                      <p className="text-sm font-medium">Rebounds Lost</p>
+                      <p className="text-2xl font-bold">{attackStats.reboundsLost}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="text-sm font-medium">Rebound Efficiency</p>
+                    <p className="text-2xl font-bold">{attackStats.reboundEfficiency}%</p>
+                    <p className="text-xs text-gray-500">(Rebounds Won / Total Rebounds) × 100</p>
+                  </div>
+
+                  <div className="bg-red-50 p-3 rounded">
+                    <p className="text-sm font-medium">Turnovers</p>
+                    <p className="text-2xl font-bold">{attackStats.turnovers}</p>
+                    <p className="text-xs text-gray-500">Bad Passes + Steps + Defended</p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-40">
+                  <p className="text-gray-500">No attack statistics available</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="defense" className="space-y-4">
+              {defenseStats ? (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-red-50 p-3 rounded">
+                      <p className="text-sm font-medium">Goals Allowed</p>
+                      <p className="text-2xl font-bold">{defenseStats.goalsAllowed}</p>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded">
+                      <p className="text-sm font-medium">Shots Allowed</p>
+                      <p className="text-2xl font-bold">{defenseStats.shotsAllowed}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="text-sm font-medium">Defensive Efficiency</p>
+                    <p className="text-2xl font-bold">{defenseStats.defensiveEfficiency}%</p>
+                    <p className="text-xs text-gray-500">100 - ((Goals Allowed / Shots Allowed) × 100)</p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-40">
+                  <p className="text-gray-500">No defense statistics available</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
+      </CardContent>
+    </Card>
+  )
 }
+

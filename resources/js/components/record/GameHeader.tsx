@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -78,18 +76,13 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
   const [gameStarted, setGameStarted] = useState(false)
   const [currentPossession, setCurrentPossession] = useState<{ type: "attack" | "defense" }>({ type: "attack" })
 
-  // Novo estado para controlar o evento de fase atual
   const [currentPhaseEvent, setCurrentPhaseEvent] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
-  // Verificar se há uma fase ativa ao carregar o componente
   useEffect(() => {
-    if (game?.id) {
-      fetchCurrentPhase()
-    }
+    if (game?.id) fetchCurrentPhase()
   }, [game?.id])
 
-  // Função para buscar a fase atual
   const fetchCurrentPhase = async () => {
     if (!game?.id) return
 
@@ -98,7 +91,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
       if (response.success) {
         setCurrentPhaseEvent(response.event)
         setGameStarted(true)
-        // Atualizar a posse atual com base no tipo do evento
+
         if (response.event.name === "attack") {
           setCurrentPossession({ type: "attack" })
         } else if (response.event.name === "defense") {
@@ -106,76 +99,55 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
         }
       }
     } catch (error) {
-      console.error("Erro ao buscar fase atual:", error)
+      console.error("Failed to fetch current phase:", error)
     }
   }
 
-  // Função para obter um player_id válido com base no tipo de fase
   const getValidPlayerId = (phaseType: "attack" | "defense"): number => {
-    // Obter jogadores da posição apropriada
     const positionPlayers = phaseType === "attack" ? getAttackPlayers() : getDefensePlayers()
+    if (positionPlayers.length > 0) return positionPlayers[0].id
+    if (players.length > 0) return players[0].id
 
-    // Se temos jogadores na posição, use o primeiro
-    if (positionPlayers.length > 0) {
-      return positionPlayers[0].id
-    }
-
-    // Caso contrário, use qualquer jogador disponível
-    if (players.length > 0) {
-      return players[0].id
-    }
-
-    // Se não temos jogadores, retorne um ID padrão (isso deve ser evitado)
-    console.warn("Nenhum jogador encontrado para associar ao evento")
-    return 1 // ID padrão, mas isso deve ser evitado
+    console.warn("No player found to associate with the event")
+    return 1
   }
 
-  // Função para iniciar uma nova fase
   const startPhase = async (phaseName: "attack" | "defense") => {
     if (!game?.id) {
-      toast.error("ID do jogo não encontrado")
+      toast.error("Game ID not found")
       return
     }
 
     setLoading(true)
     try {
-      // Se já existe uma fase ativa, finalize-a primeiro
       if (currentPhaseEvent) {
         await endEvent(currentPhaseEvent.id)
 
-
-        // Registrar evento de finalização no log
         const endEventData: Stat = {
-          game_id: game?.id ?? 0, 
+          game_id: game?.id ?? 0,
           player_id: null,
-          action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
+          action_id: actions.find((a) => a.code === "O")?.id || 0,
           success: null,
           event_id: currentPhaseEvent.id,
-          description: `Fase de ${currentPhaseEvent.name === "attack" ? "ataque" : "defesa"} finalizada`,
+          description: `End of ${currentPhaseEvent.name === "attack" ? "attack" : "defense"} phase`,
           time: formatTime(matchTime),
-          
         }
         await recordEvent(endEventData)
-      
       }
 
-      // Obter um player_id válido
       const playerId = getValidPlayerId(phaseName)
 
       const response = await createEvent({
         name: phaseName,
         game_id: game?.id ?? 0,
-        player_id: playerId, 
+        player_id: playerId,
       })
-
-      console.log("Hello", response)
 
       if (response.success) {
         setCurrentPhaseEvent(response.event)
         setCurrentPossession({ type: phaseName })
-        toast.success(`Fase de ${phaseName === "attack" ? "ataque" : "defesa"} iniciada!`)
+        toast.success(`Start of ${phaseName === "attack" ? "attack" : "defense"} phase!`)
 
-        // Se o jogo ainda não começou, marcar como iniciado
         if (!gameStarted) {
           setGameStarted(true)
           if (!isRunning) toggleTimer()
@@ -184,64 +156,55 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
         const startEventData: Stat = {
           game_id: game.id,
           player_id: null,
-          action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
+          action_id: actions.find((a) => a.code === "O")?.id || 0,
           success: null,
           event_id: (response.event as Event).id,
-          description: `Fase de ${phaseName === "attack" ? "ataque" : "defesa"} iniciada`,
+          description: `Start of ${phaseName === "attack" ? "attack" : "defense"} phase`,
           time: formatTime(matchTime),
         }
         await recordEvent(startEventData)
 
-        if (gameContext.onPhaseChange) {
-          gameContext.onPhaseChange()
-        }
+        onPhaseChange?.()
       }
     } catch (error) {
-      console.error("Erro ao iniciar fase:", error)
-      toast.error("Erro ao iniciar fase: " + (error instanceof Error ? error.message : "Erro desconhecido"))
+      console.error("Error starting phase:", error)
+      toast.error("Error starting phase: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setLoading(false)
     }
   }
 
-  // Função para finalizar a fase atual
   const endPhase = async () => {
     if (!currentPhaseEvent) return
-
     setLoading(true)
     try {
       const response = await endEvent(currentPhaseEvent.id)
 
       if (response.success) {
-
-         // Registrar evento de finalização no log
-         const endEventData: Stat = {
-          game_id: game?.id ?? 0, 
+        const endEventData: Stat = {
+          game_id: game?.id ?? 0,
           player_id: null,
-          action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
+          action_id: actions.find((a) => a.code === "O")?.id || 0,
           success: null,
           event_id: currentPhaseEvent.id,
-          description: `Fase de ${currentPhaseEvent.name === "attack" ? "ataque" : "defesa"} finalizada`,
+          description: `End of ${currentPhaseEvent.name === "attack" ? "attack" : "defense"} phase`,
           time: formatTime(matchTime),
         }
         await recordEvent(endEventData)
 
         setCurrentPhaseEvent(null)
-        toast.success("Fase finalizada!")
+        toast.success("Phase ended!")
       }
 
-      if (gameContext.onPhaseChange) {
-        gameContext.onPhaseChange()
-      }
+      onPhaseChange?.()
     } catch (error) {
-      console.error("Erro ao finalizar fase:", error)
-      toast.error("Erro ao finalizar fase")
+      console.error("Error ending phase:", error)
+      toast.error("Failed to end phase")
     } finally {
       setLoading(false)
     }
   }
 
-  // Function to start the game with the selected possession type
   const handleStartGame = async () => {
     if (!gameStarted) {
       await startPhase(startType)
@@ -254,7 +217,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <CardTitle>
-              Korfball Match Recorder - {teamName} vs {opponentName}
+              Korfball Match Recorder
             </CardTitle>
           </div>
           <div className="flex items-center gap-2">
@@ -295,11 +258,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
           <div className="flex flex-col items-center justify-center">
             <div className="text-3xl font-bold">{teamName}</div>
             {teamALogo && (
-              <img
-                src={teamALogo || "/placeholder.svg"}
-                alt={`${teamName} Logo`}
-                className="h-16 w-16 object-contain"
-              />
+              <img src={teamALogo} alt={`${teamName} Logo`} className="h-16 w-16 object-contain" />
             )}
             <div className="mt-2 text-5xl font-bold">{score}</div>
           </div>
@@ -320,7 +279,6 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
                     </span>
                   </div>
 
-                  {/* Botões de controle de fase */}
                   {currentPhaseEvent ? (
                     <div className="flex flex-col w-full gap-2">
                       <Button onClick={endPhase} variant="default" size="sm" disabled={loading} className="w-full">
@@ -378,11 +336,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
           <div className="flex flex-col items-center justify-center">
             <div className="text-3xl font-bold">{opponentName}</div>
             {teamBLogo && (
-              <img
-                src={teamBLogo || "/placeholder.svg"}
-                alt={`${opponentName} Logo`}
-                className="h-16 w-16 object-contain"
-              />
+              <img src={teamBLogo} alt={`${opponentName} Logo`} className="h-16 w-16 object-contain" />
             )}
             <div className="mt-2 text-5xl font-bold">{opponentScore}</div>
             <div className="mt-2 flex gap-2">
@@ -399,4 +353,3 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
     </Card>
   )
 }
-

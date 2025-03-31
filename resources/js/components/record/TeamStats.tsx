@@ -1,252 +1,137 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { Player, Game, Stat, Action, Possession } from "@/pages/games/record"
+import { calculateAllStats } from "@/utils/stats-calculator"
+import { useEffect, useState } from "react"
 
-interface TeamStatsProps {
-  gameContext: {
-    game: Game
-    events: Stat[]
-    players: Player[]
-    actions: Action[]
-    possessions: Possession[]
-    opponentScore: number
+export function TeamStats({ gameContext }) {
+  const { players, events, actions } = gameContext
+  const [activeTab, setActiveTab] = useState("team")
+  const [stats, setStats] = useState(null)
+
+  useEffect(() => {
+    if (players && events && actions) {
+      const calculatedStats = calculateAllStats(players, events, actions)
+      setStats(calculatedStats)
+    }
+  }, [players, events, actions])
+
+  if (!stats) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-40">
+            <p className="text-gray-500">Loading statistics...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
-}
-
-export function TeamStats({ gameContext }: TeamStatsProps) {
-  const { events, players, actions, possessions, opponentScore } = gameContext
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-2">
         <CardTitle>Team Statistics</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="team">
-          <TabsList className="mb-4 grid grid-cols-2">
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid grid-cols-3">
             <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="position">By Position</TabsTrigger>
+            <TabsTrigger value="attack">Attack</TabsTrigger>
+            <TabsTrigger value="defense">Defense</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="team">
-            {/* Team statistics */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Offensive Efficiency</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(() => {
-                      const attackPossessions = possessions.filter((p) => p.type === "attack")
-                      const goalsScored = events.filter((e) => {
-                        const action = actions.find((a) => a.id === e.action_id)
-                        return action?.code === "G" && e.success
-                      }).length
-
-                      const efficiency =
-                        attackPossessions.length > 0 ? Math.round((goalsScored / attackPossessions.length) * 100) : 0
-
-                      return (
-                        <div className="text-2xl font-bold">
-                          {efficiency}%
-                          <span className="ml-2 text-sm font-normal text-muted-foreground">
-                            ({goalsScored}/{attackPossessions.length} attacks)
-                          </span>
-                        </div>
-                      )
-                    })()}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Defensive Efficiency</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(() => {
-                      const defensePossessions = possessions.filter((p) => p.type === "defense")
-                      const goalsAllowed = opponentScore
-
-                      const efficiency =
-                        defensePossessions.length > 0
-                          ? 100 - Math.round((goalsAllowed / defensePossessions.length) * 100)
-                          : 0
-
-                      return (
-                        <div className="text-2xl font-bold">
-                          {efficiency}%
-                          <span className="ml-2 text-sm font-normal text-muted-foreground">
-                            ({defensePossessions.length - goalsAllowed}/{defensePossessions.length} defenses)
-                          </span>
-                        </div>
-                      )
-                    })()}
-                  </CardContent>
-                </Card>
+          <TabsContent value="team" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-700">Offensive Efficiency</h3>
+                <p className="text-3xl font-bold">{stats.team.offensiveEfficiency}%</p>
+                <p className="text-sm text-gray-500">Goals: {stats.team.totalGoals}</p>
               </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-700">Defensive Efficiency</h3>
+                <p className="text-3xl font-bold">{stats.team.defensiveEfficiency}%</p>
+              </div>
+            </div>
 
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Action Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <h4 className="font-medium">Attacks</h4>
-                      <p className="text-2xl font-bold">{possessions.filter((p) => p.type === "attack").length}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Shots</h4>
-                      <p className="text-2xl font-bold">
-                        {
-                          events.filter((e) => {
-                            const action = actions.find((a) => a.id === e.action_id)
-                            return (
-                              action?.code === "LC" ||
-                              action?.code === "LM" ||
-                              action?.code === "LL" ||
-                              action?.code === "P" ||
-                              action?.code === "G"
-                            )
-                          }).length
-                        }
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Turnovers</h4>
-                      <p className="text-2xl font-bold">
-                        {
-                          events.filter((e) => {
-                            const action = actions.find((a) => a.id === e.action_id)
-                            return action?.code === "MP" || action?.code === "Pa"
-                          }).length
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="mt-4">
+              <h3 className="font-semibold mb-2">Team Summary</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm font-medium">Total Shots</p>
+                  <p className="text-xl font-bold">{stats.team.totalShots}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm font-medium">Total Goals</p>
+                  <p className="text-xl font-bold">{stats.team.totalGoals}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm font-medium">Rebounds Won</p>
+                  <p className="text-xl font-bold">{stats.team.totalReboundsWon}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm font-medium">Turnovers</p>
+                  <p className="text-xl font-bold">{stats.team.totalTurnovers}</p>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="position">
-            {/* Statistics by position */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Attack</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const attackPlayers = players.filter((p) => p.position === "attack")
+          <TabsContent value="attack" className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="text-left p-2">Player</th>
+                    <th className="p-2">Goals</th>
+                    <th className="p-2">Shots</th>
+                    <th className="p-2">Efficiency</th>
+                    <th className="p-2">Rebounds</th>
+                    <th className="p-2">Turnovers</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.attack.map((player) => (
+                    <tr key={player.playerId} className="border-b">
+                      <td className="p-2 font-medium">{player.playerName}</td>
+                      <td className="p-2 text-center">{player.goals}</td>
+                      <td className="p-2 text-center">{player.shots}</td>
+                      <td className="p-2 text-center">{player.shootingEfficiency}%</td>
+                      <td className="p-2 text-center">{player.reboundsWon}</td>
+                      <td className="p-2 text-center">{player.turnovers}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
 
-                    const attackEvents = events.filter((e) => attackPlayers.some((p) => p.id === e.player_id))
-
-                    const goals = attackEvents.filter((e) => {
-                      const action = actions.find((a) => a.id === e.action_id)
-                      return action?.code === "G" && e.success
-                    }).length
-
-                    const shots = attackEvents.filter((e) => {
-                      const action = actions.find((a) => a.id === e.action_id)
-                      return (
-                        action?.code === "LC" ||
-                        action?.code === "LM" ||
-                        action?.code === "LL" ||
-                        action?.code === "P" ||
-                        action?.code === "G"
-                      )
-                    }).length
-
-                    const efficiency = shots > 0 ? Math.round((goals / shots) * 100) : 0
-
-                    const turnovers = attackEvents.filter((e) => {
-                      const action = actions.find((a) => a.id === e.action_id)
-                      return action?.code === "MP" || action?.code === "Pa"
-                    }).length
-
-                    return (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Goals</h4>
-                            <p className="text-2xl font-bold">{goals}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Efficiency</h4>
-                            <p className="text-2xl font-bold">{efficiency}%</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Shots</h4>
-                            <p className="text-2xl font-bold">{shots}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Turnovers</h4>
-                            <p className="text-2xl font-bold">{turnovers}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Defense</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const defensePlayers = players.filter((p) => p.position === "defense")
-
-                    const defenseEvents = events.filter((e) => defensePlayers.some((p) => p.id === e.player_id))
-
-                    const defensiveActions = defenseEvents.filter((e) => {
-                      const action = actions.find((a) => a.id === e.action_id)
-                      return action?.code === "D" || action?.code === "RG" || action?.code === "RP"
-                    })
-
-                    const successfulDefense = defensiveActions.filter((e) => e.success).length
-
-                    const efficiency =
-                      defensiveActions.length > 0 ? Math.round((successfulDefense / defensiveActions.length) * 100) : 0
-
-                    const rebounds = defenseEvents.filter((e) => {
-                      const action = actions.find((a) => a.id === e.action_id)
-                      return action?.code === "RG" || action?.code === "RP"
-                    }).length
-
-                    const blocks = defenseEvents.filter((e) => {
-                      const action = actions.find((a) => a.id === e.action_id)
-                      return action?.code === "D" && e.success
-                    }).length
-
-                    return (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Efficiency</h4>
-                            <p className="text-2xl font-bold">{efficiency}%</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Actions</h4>
-                            <p className="text-2xl font-bold">{defensiveActions.length}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Rebounds</h4>
-                            <p className="text-2xl font-bold">{rebounds}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Blocks</h4>
-                            <p className="text-2xl font-bold">{blocks}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
-                </CardContent>
-              </Card>
+          <TabsContent value="defense" className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="text-left p-2">Player</th>
+                    <th className="p-2">Goals Allowed</th>
+                    <th className="p-2">Shots Allowed</th>
+                    <th className="p-2">Defensive Efficiency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.defense.map((player) => (
+                    <tr key={player.playerId} className="border-b">
+                      <td className="p-2 font-medium">{player.playerName}</td>
+                      <td className="p-2 text-center">{player.goalsAllowed}</td>
+                      <td className="p-2 text-center">{player.shotsAllowed}</td>
+                      <td className="p-2 text-center">{player.defensiveEfficiency}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </TabsContent>
         </Tabs>

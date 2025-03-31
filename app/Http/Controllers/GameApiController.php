@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\GamePlayer;
 use App\Models\Player;
+use App\Models\Action;
+use App\Models\Stat;
 
 class GameApiController extends Controller
 {
@@ -170,4 +172,49 @@ class GameApiController extends Controller
         'game' => $game
     ]);
 }
+
+/**
+ * Get game report data including stats, players, and actions
+ */
+public function getGameReport($id)
+{
+    try {
+        // Carregar o jogo com relacionamentos
+        $game = Game::with(['teamA', 'teamB'])->findOrFail($id);
+        
+        // Obter todos os jogadores para este jogo
+        $players = Player::where('team_id', $game->team_a_id)
+            ->orWhere('team_id', $game->team_b_id)
+            ->get();
+        
+        // Obter todas as ações
+        $actions = Action::all();
+        
+        // Obter todas as estatísticas para este jogo
+        $stats = Stat::where('game_id', $id)->get();
+        
+        // Log para debug
+        Log::info("Game report data for game {$id}:", [
+            'game' => $game->toArray(),
+            'players_count' => $players->count(),
+            'actions_count' => $actions->count(),
+            'stats_count' => $stats->count()
+        ]);
+        
+        return response()->json([
+            'game' => $game,
+            'players' => $players,
+            'actions' => $actions,
+            'stats' => $stats,
+        ]);
+    } catch (\Exception $e) {
+        Log::error("Error generating game report for game {$id}: " . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to generate game report: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
 }
