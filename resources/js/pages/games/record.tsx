@@ -10,7 +10,7 @@ import { PlayerStats } from "@/components/record/PlayerStats"
 import { TeamStats } from "@/components/record/TeamStats"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AppLayout from "@/layouts/app-layout"
-import { Head, router, usePage } from "@inertiajs/react"
+import { Head} from "@inertiajs/react"
 import { useEffect, useState } from "react"
 
 // Import the services
@@ -596,12 +596,11 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
       const description = eventDescription || `${selectedPlayer.name} - ${action.description || "Action"}`
 
       const eventData: Stat = {
-        game_id: game?.id,
+        game_id: game?.id ?? 0,
         player_id: selectedPlayer.id,
         action_id: actionId,
         success: eventSuccess,
-        event_id: currentPhaseEvent.id, // Usar o ID do evento atual
-        event_type: "player_action",
+        event_id: currentPhaseEvent.id, 
         description,
         time: formatTime(matchTime),
       }
@@ -745,7 +744,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
       player_id: playerId,
       action_id: actions.find((a) => a.code === "PS")?.id || 0,
       success: true,
-      event_id: currentPhaseEvent?.id || "1", // Usar o ID do evento atual ou fallback para "1"
+      event_id: currentPhaseEvent?.id || "1", 
       event_type: "position_switch",
       description: "Position switch: attack and defense",
       time: formatTime(matchTime),
@@ -753,29 +752,51 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     recordEvent(eventData)
   }
 
-  // ============ End Game ============
-  function endGame() {
+  async function endGame() {
     if (!confirm("Are you sure you want to end this game? This action cannot be undone.")) return
 
-    router.post(
-      route("games.end", game?.id),
-      {
-        score_team_a: score,
-        score_team_b: opponentScore,
-        ended_at: new Date().toISOString(),
-      },
-      {
-        onSuccess: () => {
-          localStorage.removeItem(`game_${game?.id}_time`)
-          localStorage.removeItem(`game_${game?.id}_period`)
-          localStorage.removeItem(`game_${game?.id}_score`)
-          localStorage.removeItem(`game_${game?.id}_opponent_score`)
+    try {
+      // Obter o token CSRF do meta tag
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || ""
+
+      // Construir a URL para a requisição
+      const url = `/games/${game?.id}/end`
+
+      // Fazer a requisição usando fetch
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": csrfToken,
+          Accept: "application/json",
         },
-        onError: (errors) => {
-          alert(`Falha ao encerrar o jogo: ${errors.message || "Erro desconhecido"}`)
-        },
-      },
-    )
+        body: JSON.stringify({
+          score_team_a: score,
+          score_team_b: opponentScore,
+          ended_at: new Date().toISOString(),
+        }),
+      })
+
+      // Verificar se a resposta foi bem-sucedida
+      if (response.ok) {
+        // Limpar dados do localStorage
+        localStorage.removeItem(`game_${game?.id}_time`)
+        localStorage.removeItem(`game_${game?.id}_period`)
+        localStorage.removeItem(`game_${game?.id}_score`)
+        localStorage.removeItem(`game_${game?.id}_opponent_score`)
+
+        // Redirecionar para a página de dashboard ou outra página apropriada
+        window.location.href = "/dashboard"
+      } else {
+        // Processar erro da resposta
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Erro ao finalizar o jogo")
+      }
+    } catch (error) {
+      // Tratar erros
+      alert(`Falha ao encerrar o jogo: ${error instanceof Error ? error.message : "Erro desconhecido"}`)
+      console.error("Erro ao finalizar jogo:", error)
+    }
   }
 
   // ============ Opponent Score ============
@@ -815,7 +836,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     teamALogo,
     teamBLogo,
     opponentName,
-    currentPhaseEvent, // Adicione o currentPhaseEvent ao contexto
+    currentPhaseEvent, 
 
     formatTime,
     toggleTimer,
@@ -826,17 +847,17 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     incrementOpponentScore,
     decrementOpponentScore,
 
-    // partition
+   
     getAttackPlayers,
     getDefensePlayers,
     getSubstitutes,
 
-    // events
+   
     openEditDialog,
     handleDeleteEvent,
-    recordEvent, // Adicione a função recordEvent ao contexto
+    recordEvent, 
 
-    // positions
+ 
     updatePlayerPosition,
     updateLocalPlayerPosition,
     positionedPlayers,
@@ -845,7 +866,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     toggleSetupMode,
     completeInitialSetup,
 
-    // for the field, if you want a click => open event dialog
+  
     handlePlayerClick: (player: Player) => {
       setSelectedPlayer(player)
       setEventDialogOpen(true)
@@ -854,9 +875,12 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     onPhaseChange: () => {
       fetchCurrentPhase()
     },
+    recordGameEvent: (eventData: Stat) => {
+      recordEvent(eventData)
+    },
   }
 
-  const { route } = usePage().props
+
 
   return (
     <>

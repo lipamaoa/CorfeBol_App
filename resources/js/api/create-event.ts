@@ -1,4 +1,4 @@
-import type { Event } from "@/pages/games/record"
+import type { Event } from "@/types/index"
 
 interface ApiResponse {
   success: boolean
@@ -46,7 +46,7 @@ export async function createEvent(data: EventData): Promise<CreateEventResponse>
 
 
 
-export async function endEvent(eventId) {
+export async function endEvent(eventId: number) {
   try {
     const response = await fetch(`/api/events/${eventId}/end-phase`, {
       method: "PUT",
@@ -71,7 +71,7 @@ export async function endEvent(eventId) {
   }
 }
 
-export async function getCurrentEvent(gameId) {
+export async function getCurrentEvent(gameId: number) {
   try {
     const response = await fetch(`/api/games/${gameId}/current-phase`, {
       method: "GET",

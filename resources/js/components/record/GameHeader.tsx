@@ -66,7 +66,6 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
     changePeriod,
     switchAttackDefense,
     endGame,
-    startNewPossession,
     incrementOpponentScore,
     decrementOpponentScore,
     getAttackPlayers,
@@ -147,14 +146,14 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
 
         // Registrar evento de finalização no log
         const endEventData: Stat = {
-          game_id: game.id,
+          game_id: game?.id ?? 0, 
           player_id: null,
           action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
           success: null,
           event_id: currentPhaseEvent.id,
-          event_type: "phase_end",
           description: `Fase de ${currentPhaseEvent.name === "attack" ? "ataque" : "defesa"} finalizada`,
           time: formatTime(matchTime),
+          
         }
         await recordEvent(endEventData)
       
@@ -165,7 +164,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
 
       const response = await createEvent({
         name: phaseName,
-        game_id: game.id,
+        game_id: game?.id ?? 0,
         player_id: playerId, 
       })
 
@@ -187,8 +186,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
           player_id: null,
           action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
           success: null,
-          event_id: response.event.id,
-          event_type: "phase_start",
+          event_id: (response.event as Event).id,
           description: `Fase de ${phaseName === "attack" ? "ataque" : "defesa"} iniciada`,
           time: formatTime(matchTime),
         }
@@ -218,12 +216,11 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
 
          // Registrar evento de finalização no log
          const endEventData: Stat = {
-          game_id: game.id,
+          game_id: game?.id ?? 0, 
           player_id: null,
           action_id: actions.find((a) => a.code === "O")?.id || 0, // Usar código "O" para outros eventos
           success: null,
           event_id: currentPhaseEvent.id,
-          event_type: "phase_end",
           description: `Fase de ${currentPhaseEvent.name === "attack" ? "ataque" : "defesa"} finalizada`,
           time: formatTime(matchTime),
         }
@@ -272,7 +269,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
                     <SelectItem value="defense">Start Defense</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="primary" size="sm" onClick={handleStartGame} disabled={loading}>
+                <Button variant="default" size="sm" onClick={handleStartGame} disabled={loading}>
                   Start Game
                 </Button>
               </>

@@ -91,7 +91,6 @@ export function GameField({ gameContext }: { gameContext: GameContext }) {
     handlePlayerClick,
     getAttackPlayers,
     getDefensePlayers,
-    getSubstitutes,
     updatePlayerPosition,
     updateLocalPlayerPosition,
     initialSetupComplete,
@@ -103,12 +102,6 @@ export function GameField({ gameContext }: { gameContext: GameContext }) {
 
   // Force re-render when players change
   const [renderKey, setRenderKey] = useState(0)
-
-  // Add logs for debugging
-  console.log("GameField rendered with players:", players)
-  console.log("Attack players:", getAttackPlayers())
-  console.log("Defense players:", getDefensePlayers())
-  console.log("Substitutes:", getSubstitutes())
 
   // State for selection mode
   const [selectedPlayer, setSelectedPlayer] = useState<Player | undefined | null>(undefined)
@@ -152,17 +145,6 @@ export function GameField({ gameContext }: { gameContext: GameContext }) {
 
   // Get defense players with their positions
   const defensePlayers = getDefensePlayers()
-
-  // Monitor player changes
-  useEffect(() => {
-    console.log("Players changed:", players)
-    console.log("Attack players:", getAttackPlayers())
-    console.log("Defense players:", getDefensePlayers())
-    console.log("Substitutes:", getSubstitutes())
-
-    // Force re-render when players change
-    setRenderKey((prev) => prev + 1)
-  }, [players, getAttackPlayers, getDefensePlayers, getSubstitutes])
 
   // Handle selecting a position on the field
   const handleSelectPosition = (zone: "attack" | "defense" | "bench", positionIndex: number | undefined, player?: Player) => {

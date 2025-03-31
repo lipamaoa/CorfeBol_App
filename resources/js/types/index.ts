@@ -78,11 +78,11 @@ export interface Player {
 
 
   export interface Stat {
-    id: number
+    id?: number
     game_id: number
     player_id: number | null
     action_id: number
-    success: boolean
+    success: boolean | null
     event_id: number
     description: string
     time: string
