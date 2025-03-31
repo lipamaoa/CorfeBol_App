@@ -23,3 +23,10 @@ Route::post('/game-players/update-position', [GamePlayerController::class, 'upda
 Route::get('/games/{gameId}/players', [GamePlayerController::class, 'getGamePlayers']);
 Route::get('/games/{gameId}/stats', [StatController::class, 'getGameStats']);
 
+
+// Event phase routes
+Route::post('/events/start-phase', [EventAPIController::class, 'startPhase']);
+Route::put('/events/{id}/end-phase', [EventAPIController::class, 'endPhase']);
+Route::get('/games/{gameId}/current-phase', [EventAPIController::class, 'getCurrentPhase']);
+Route::get('/events/game/{gameId}/phases', [EventAPIController::class, 'getGamePhases']);
+

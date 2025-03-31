@@ -11,9 +11,7 @@ import { Head } from "@inertiajs/react"
 import { format, parseISO } from "date-fns"
 import { ArrowRight, Calendar, Clock, MapPin, Trophy, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
-import {Game} from "@/types/index"
-
-
+import type { Game } from "@/types/index"
 
 interface GamesProps {
   games: Game[]
@@ -53,6 +51,9 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
         console.log("First game:", data[0])
         console.log("Team A:", data[0].team_a.name)
         console.log("Team B:", data[0].team_b.name)
+        // Log score data to verify it's coming from the server
+        console.log("Score Team A:", data[0].score_team_a)
+        console.log("Score Team B:", data[0].score_team_b)
       }
 
       setGames(data)
@@ -89,14 +90,14 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
     console.log("Initial games:", initialGames)
     if (initialGames.length > 0) {
       console.log("First initial game:", initialGames[0])
-      console.log("Initial Team A:", initialGames[0].teamA.name
-      )
-      console.log("Initial Team B:", initialGames[0].teamB.name)
+      console.log("Initial Team A:", initialGames[0].team_a.name)
+      console.log("Initial Team B:", initialGames[0].team_b.name)
+      // Log score data from initial props
+      console.log("Initial Score Team A:", initialGames[0].score_team_a)
+      console.log("Initial Score Team B:", initialGames[0].score_team_b)
     }
     setGames(initialGames)
   }, [initialGames])
-
- 
 
   return (
     <>
@@ -149,11 +150,11 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                         <CardHeader className="bg-blue-50 pb-2">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg">
-                            {game.teamA.name} vs {game.teamB.name}
+                              {game.team_a.name} vs {game.team_b.name}
                             </CardTitle>
                             <Badge
                               variant={
-                                game.status === "complete"
+                                game.status === "completed"
                                   ? "success"
                                   : game.status === "in_progress"
                                     ? "default"
@@ -187,13 +188,19 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                               </div>
                             )}
 
-                            {game.status === "complete" && (
+                            {game.status === "completed" && (
                               <div className="mt-2 flex items-center justify-center rounded-md bg-gray-50 py-2">
                                 <div className="text-center">
                                   <div className="flex items-center justify-center gap-4">
-                                    <div className="text-xl font-bold">{game.score_team_a || 0}</div>
+                                    <div className="flex flex-col items-center">
+                                      <span className="text-xs text-gray-500">{game.team_a.name}</span>
+                                      <div className="text-xl font-bold">{game.score_team_a || 0}</div>
+                                    </div>
                                     <Trophy className="h-5 w-5 text-yellow-500" />
-                                    <div className="text-xl font-bold">{game.score_team_b || 0}</div>
+                                    <div className="flex flex-col items-center">
+                                      <span className="text-xs text-gray-500">{game.team_b.name}</span>
+                                      <div className="text-xl font-bold">{game.score_team_b || 0}</div>
+                                    </div>
                                   </div>
                                   <div className="mt-1 text-xs text-gray-500">Final Score</div>
                                 </div>
@@ -213,7 +220,7 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                                 </Button>
                               )}
 
-                              {game.status === "complete" && (
+                              {game.status === "completed" && (
                                 <Button
                                   variant="outline"
                                   onClick={() => navigateTo(`/stats?game_id=${game.id}`)}

@@ -1,4 +1,4 @@
-import type { Event } from "@/pages/games/record"
+import type { Event } from "@/types/index"
 
 interface ApiResponse {
   success: boolean
@@ -6,38 +6,89 @@ interface ApiResponse {
   message?: string
 }
 
-export async function createEvent(eventData: Omit<Event, "id" | "created_at" | "updated_at">): Promise<ApiResponse> {
-  try {
-    // Get the CSRF token from the meta tag
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || ""
+interface EventData {
+  game_id: number
+  name: string
+  start_time?: string
+  player_id: number
+}
 
-    const response = await fetch("/api/events", {
-      method: "POST",
+interface CreateEventResponse {
+  success?: boolean
+  message?: string
+  error?: string
+  [key: string]: unknown
+}
+
+export async function createEvent(data: EventData): Promise<CreateEventResponse> {
+  if (!data.player_id) {
+    throw new Error("The player_id field is required.")
+  }
+
+  const response = await fetch("/api/events/start-phase", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      game_id: data.game_id,
+      name: data.name === "attack" || data.name === "defense" ? data.name : "attack",
+      start_time: data.start_time || new Date().toLocaleTimeString(),
+      player_id: data.player_id
+    })
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error creating event: ${response.statusText}`)
+  }
+
+  return await response.json()
+}
+
+
+
+
+export async function endEvent(eventId: number) {
+  try {
+    const response = await fetch(`/api/events/${eventId}/end-phase`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "X-CSRF-TOKEN": csrfToken,
-        credentials: "include",
       },
-      body: JSON.stringify(eventData),
-    })
+      body: JSON.stringify({
+        end_time: new Date().toLocaleTimeString(),
+      }),
+    });
 
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || `Error: ${response.status}`)
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Error: ${response.status}`);
     }
 
-    const data = await response.json()
-    return {
-      success: true,
-      event: data.event,
-    }
+    return await response.json();
   } catch (error) {
-    console.error("Error creating event:", error)
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : "Unknown error occurred",
+    console.error("Error ending event:", error);
+    throw error;
+  }
+}
+
+export async function getCurrentEvent(gameId: number) {
+  try {
+    const response = await fetch(`/api/games/${gameId}/current-phase`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Error: ${response.status}`);
     }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting current event:", error);
+    throw error;
   }
 }
 

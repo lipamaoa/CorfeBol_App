@@ -38,4 +38,12 @@ class Stat extends Model
     {
         return $this->belongsTo(Action::class);
     }
+
+    /**
+     * Get the event associated with this stat
+     */
+    public function event()
+    {
+        return $this->belongsTo(Event::class);
+    }
 }

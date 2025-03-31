@@ -144,4 +144,30 @@ class GameApiController extends Controller
 
         return response()->json(null);
     }
+
+
+
+    public function endGame(Request $request, $id)
+{
+    $game = Game::findOrFail($id);
+    
+    $validated = $request->validate([
+        'score_team_a' => 'required|integer|min:0',
+        'score_team_b' => 'required|integer|min:0',
+        'ended_at' => 'required|date',
+    ]);
+    
+    $game->update([
+        'score_team_a' => $validated['score_team_a'],
+        'score_team_b' => $validated['score_team_b'],
+        'status' => 'complete',
+        'ended_at' => $validated['ended_at'],
+    ]);
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Game ended successfully',
+        'game' => $game
+    ]);
+}
 }

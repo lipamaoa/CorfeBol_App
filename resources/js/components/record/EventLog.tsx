@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2} from "lucide-react"
 import type { Player, Game, Stat, Action } from "@/types/index"
 import { getEventIcon, getEventColor } from "@/utils/eventHelpers"
+
 
 interface EventLogProps {
   gameContext: {
@@ -48,8 +49,8 @@ export function EventLog({ gameContext, setEventDialogOpen }: EventLogProps) {
 
                 return (
                   <div key={event.id} className={`flex items-start gap-3 rounded-lg border p-3`}>
-                    <div className={`rounded-full p-2 ${getEventColor(event.event_type, event.success)}`}>
-                      {getEventIcon(event.event_type)}
+                    <div className={`rounded-full p-2 ${getEventColor(event.description, event.success)}`}>
+                      {getEventIcon(event.description)}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">

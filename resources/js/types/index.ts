@@ -64,6 +64,8 @@ export interface Player {
   }
   
   export interface Game {
+    team_b: Team;
+    team_a: Team;
     id: number
     team_a_id: number
     team_b_id: number
@@ -71,19 +73,27 @@ export interface Player {
     teamB: Team
     score_team_a?: number | null
     score_team_b?: number | null
-    status: "scheduled" | "in_progress" | "complete"
+    status: "scheduled" | "in_progress" | "completed"
   }
 
 
   export interface Stat {
-    id: number
+    id?: number
     game_id: number
-    player_id: number
+    player_id: number | null
     action_id: number
-    success: boolean
+    success: boolean | null
     event_id: number
     description: string
     time: string
+  }
+
+
+  export interface Event {
+    id: number
+    name: string
+    player_id: number
+    
   }
 
   
