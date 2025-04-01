@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('game_player', function (Blueprint $table) {
-            //
+            $table->dropColumn('initial_position');
         });
     }
 };
