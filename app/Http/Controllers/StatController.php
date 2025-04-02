@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Stat;
 use Illuminate\Http\Request;
 use App\Models\Event;
+use App\Models\Game;
+use App\Models\Player;
+use App\Models\Action;
 
 class StatController extends Controller
 {
@@ -118,14 +121,98 @@ class StatController extends Controller
         ]);
     }
     
+   /**
+     * Get stats for a specific game
+     */
     public function getGameStats($gameId)
     {
-        $stats = Stat::where('game_id', $gameId)
-            ->with(['player', 'action'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-            
-        return response()->json($stats);
+        // Get the game
+        $game = Game::find($gameId);
+        
+        if (!$game) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Game not found'
+            ]);
+        }
+        
+        // Get stats for this game
+        $stats = Stat::where('game_id', $game->id)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+        
+        // Get events for this game
+        $events = Event::where('game_id', $game->id)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+        
+        // Get players involved in this game
+        $playerIds = Stat::where('game_id', $game->id)
+                        ->whereNotNull('player_id')
+                        ->pluck('player_id')
+                        ->unique();
+        
+        $players = Player::whereIn('id', $playerIds)->get();
+        
+        // Get all actions
+        $actions = Action::all();
+        
+        return response()->json([
+            'success' => true,
+            'game' => $game,
+            'stats' => $stats,
+            'events' => $events,
+            'players' => $players,
+            'actions' => $actions
+        ]);
+    }
+
+
+    /**
+     * Get stats for the latest game
+     */
+    public function getLatestGameStats()
+    {
+        // Get the latest game
+        $game = Game::orderBy('date', 'desc')->first();
+        
+        if (!$game) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No games found'
+            ]);
+        }
+        
+        // Get stats for this game
+        $stats = Stat::where('game_id', $game->id)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+        
+        // Get events for this game
+        $events = Event::where('game_id', $game->id)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+        
+        // Get players involved in this game
+        $playerIds = Stat::where('game_id', $game->id)
+                        ->whereNotNull('player_id')
+                        ->pluck('player_id')
+                        ->unique();
+        
+        $players = Player::whereIn('id', $playerIds)->get();
+        
+        // Get all actions
+        $actions = Action::all();
+        
+        return response()->json([
+            'success' => true,
+            'game' => $game,
+            'stats' => $stats,
+            'events' => $events,
+            'players' => $players,
+            'actions' => $actions
+        ]);
+        
     }
 }
 

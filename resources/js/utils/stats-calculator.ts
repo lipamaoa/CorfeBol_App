@@ -98,7 +98,7 @@ export function calculatePlayerDefenseStats(
 
   // Encontrar códigos de ação
   const shotAllowedActionIds = actions
-    .filter((a) => ["LP", "LC", "LM", "LL", "L", "Pe"].includes(a.code))
+    .filter((a) => ["D", "RG"].includes(a.code))
     .map((a) => a.id)
 
   const goalAllowedActionId = actions.find((a) => a.code === "GS")?.id
@@ -109,6 +109,7 @@ export function calculatePlayerDefenseStats(
 
   // Calcular eficiência defensiva
   const defensiveEfficiency = shotsAllowed > 0 ? Math.round(100 - (goalsAllowed / shotsAllowed) * 100) : 100
+  console.log("Defensive efficiency:", defensiveEfficiency)
 
   return {
     playerId,
@@ -130,6 +131,7 @@ export function calculateTeamStats(stats: Stat[], actions: Action[]): TeamStats 
       return event
     })
     .map((s) => s.event_id)
+    console.log("Attack event IDs:", attackEventIds)
 
   const defenseEventIds = stats
     .filter((s) => {
@@ -229,6 +231,7 @@ export function calculateAllStats(players: Player[], stats: Stat[], actions: Act
 
     // Calcular estatísticas da equipe
     const teamStats = calculateTeamStats(stats, actions)
+    console.log("Team stats:", teamStats)
 
     return {
       attack: attackStats,

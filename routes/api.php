@@ -22,6 +22,7 @@ Route::apiResource('/events', EventAPIController::class);
 Route::post('/game-players/update-position', [GamePlayerController::class, 'updatePosition']);
 Route::get('/games/{gameId}/players', [GamePlayerController::class, 'getGamePlayers']);
 Route::get('/games/{gameId}/stats', [StatController::class, 'getGameStats']);
+Route::get('/games/latest/stats', [StatController::class, 'getLatestGameStats']);
 
 
 // Event phase routes
@@ -32,3 +33,4 @@ Route::get('/events/game/{gameId}/phases', [EventAPIController::class, 'getGameP
 
 // Add this route to your existing routes
 Route::get('/games/{id}/report', [GameAPIController::class, 'getGameReport']);
+

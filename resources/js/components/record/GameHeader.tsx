@@ -32,8 +32,6 @@ interface GameHeaderProps {
     startNewPossession?: (type: "attack" | "defense") => void
     endCurrentPossession?: (reason: string) => void
     endGame: () => void
-    incrementOpponentScore: () => void
-    decrementOpponentScore: () => void
     actions: Action[]
     players: Player[]
     recordEvent: (eventData: Stat) => Promise<void>
@@ -64,8 +62,6 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
     changePeriod,
     switchAttackDefense,
     endGame,
-    incrementOpponentScore,
-    decrementOpponentScore,
     getAttackPlayers,
     getDefensePlayers,
     recordEvent,
@@ -339,14 +335,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
               <img src={teamBLogo} alt={`${opponentName} Logo`} className="h-16 w-16 object-contain" />
             )}
             <div className="mt-2 text-5xl font-bold">{opponentScore}</div>
-            <div className="mt-2 flex gap-2">
-              <Button variant="outline" size="sm" onClick={incrementOpponentScore}>
-                +1
-              </Button>
-              <Button variant="outline" size="sm" onClick={decrementOpponentScore}>
-                -1
-              </Button>
-            </div>
+          
           </div>
         </div>
       </CardContent>
