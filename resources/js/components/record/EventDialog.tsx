@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Player, Action } from "@/types/index";
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { Player, Action } from "@/types/index"
 import {
   Target,
   Heart,
@@ -25,29 +29,29 @@ import {
   XCircle,
   User,
   ChevronRight,
-} from "lucide-react";
+} from "lucide-react"
 
 interface EventDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
 
-  selectedPlayer: Player | null;
-  setSelectedPlayer: (player: Player | null) => void;
+  selectedPlayer: Player | null
+  setSelectedPlayer: (player: Player | null) => void
 
-  selectedActionId: number | null;
-  setSelectedActionId: (id: number | null) => void;
+  selectedActionId: number | null
+  setSelectedActionId: (id: number | null) => void
 
-  eventSuccess: boolean;
-  setEventSuccess: (success: boolean) => void;
+  eventSuccess: boolean
+  setEventSuccess: (success: boolean) => void
 
-  eventDescription: string;
-  setEventDescription: (desc: string) => void;
+  eventDescription: string
+  setEventDescription: (desc: string) => void
 
   /** Agora handleAddEvent recebe o actionId diretamente. */
-  handleAddEvent: (actionId: number) => void;
+  handleAddEvent: (actionId: number, success?: boolean) => void
 
-  actions: Action[];
-  players: Player[];
+  actions: Action[]
+  players: Player[]
 }
 
 export function EventDialog({
@@ -65,17 +69,17 @@ export function EventDialog({
   actions,
   players,
 }: EventDialogProps) {
-  const [showDescription, setShowDescription] = useState(false);
-  const [activeTab, setActiveTab] = useState("players");
+  const [showDescription, setShowDescription] = useState(false)
+  const [activeTab, setActiveTab] = useState("players")
 
   // Se já temos um jogador selecionado, muda para a aba "actions"
   useEffect(() => {
     if (selectedPlayer) {
-      setActiveTab("actions");
+      setActiveTab("actions")
     } else {
-      setActiveTab("players");
+      setActiveTab("players")
     }
-  }, [selectedPlayer]);
+  }, [selectedPlayer])
 
   /** Cores de fundo das ações */
   function getActionColor(code: string): string {
@@ -97,8 +101,9 @@ export function EventDialog({
       Pe: "bg-green-700",
       T: "bg-zinc-600",
       O: "bg-neutral-500",
-    };
-    return colorMap[code] || "bg-gray-500";
+      GS: "bg-red-500", // Adicionado para Gol Sofrido
+    }
+    return colorMap[code] || "bg-gray-500"
   }
 
   /** Ícones das ações */
@@ -121,13 +126,14 @@ export function EventDialog({
       Pe: <Flag className="h-4 w-4" />,
       T: <Timer className="h-4 w-4" />,
       O: <Plus className="h-4 w-4" />,
-    };
-    return iconMap[code] || <Zap className="h-4 w-4" />;
+      GS: <Target className="h-4 w-4" />, // Adicionado para Gol Sofrido
+    }
+    return iconMap[code] || <Zap className="h-4 w-4" />
   }
 
   /** Clique no jogador */
   function handlePlayerSelect(player: Player) {
-    setSelectedPlayer(player);
+    setSelectedPlayer(player)
   }
 
   /**
@@ -135,19 +141,43 @@ export function EventDialog({
    * chamamos diretamente handleAddEvent(actionId).
    */
   function handleActionClick(actionId: number) {
-    setSelectedActionId(actionId);
+    setSelectedActionId(actionId)
 
-    const action = actions.find((a) => a.id === actionId);
-    if (!action || !selectedPlayer) return;
+    const action = actions.find((a) => a.id === actionId)
+    if (!action || !selectedPlayer) return
 
     // Passamos actionId pro pai
-    handleAddEvent(actionId);
+    handleAddEvent(actionId, eventSuccess)
   }
 
   // Separa jogadores por posição
-  const attackPlayers = players.filter((p) => p.position === "attack");
-  const defensePlayers = players.filter((p) => p.position === "defense");
-  const benchPlayers = players.filter((p) => p.position === "bench" || !p.position);
+  const attackPlayers = players.filter((p) => p.position === "attack")
+  const defensePlayers = players.filter((p) => p.position === "defense")
+  const benchPlayers = players.filter((p) => p.position === "bench" || !p.position)
+
+  // Filtra ações com base na posição do jogador selecionado
+  const getFilteredActions = () => {
+    if (!selectedPlayer) return actions
+
+    // Códigos de ações para cada posição
+    const attackActionCodes = ["G", "A", "LC", "LM", "LL", "L", "Pe", "MP", "Pa", "RP", "S", "PS", "O"]
+    const defenseActionCodes = ["D", "RG", "GS", "F", "RB", "I", "B", "S", "PS", "O"]
+
+    // Se o jogador está na defesa, mostrar apenas ações defensivas
+    if (selectedPlayer.position === "defense") {
+      return actions.filter((action) => defenseActionCodes.includes(action.code))
+    }
+
+    // Se o jogador está no ataque, mostrar apenas ações ofensivas
+    if (selectedPlayer.position === "attack") {
+      return actions.filter((action) => attackActionCodes.includes(action.code))
+    }
+
+    // Para jogadores no banco ou sem posição definida, mostrar todas as ações
+    return actions
+  }
+
+  const filteredActions = getFilteredActions()
 
   return (
     <Dialog
@@ -155,13 +185,13 @@ export function EventDialog({
       onOpenChange={(newOpen) => {
         if (!newOpen) {
           // Reset quando fechar
-          setSelectedPlayer(null);
-          setSelectedActionId(null);
-          setEventDescription("");
-          setEventSuccess(true);
-          setShowDescription(false);
+          setSelectedPlayer(null)
+          setSelectedActionId(null)
+          setEventDescription("")
+          setEventSuccess(true)
+          setShowDescription(false)
         }
-        onOpenChange(newOpen);
+        onOpenChange(newOpen)
       }}
     >
       <DialogContent className="sm:max-w-md">
@@ -176,14 +206,10 @@ export function EventDialog({
                 {selectedPlayer.name.charAt(0)}
               </div>
             )}
-            <span>
-              {selectedPlayer ? `${selectedPlayer.name}'s Action` : "Record Action"}
-            </span>
+            <span>{selectedPlayer ? `${selectedPlayer.name}'s Action` : "Record Action"}</span>
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {selectedPlayer
-              ? "Click on an action to record it"
-              : "Select a player first, then choose an action"}
+            {selectedPlayer ? "Click on an action to record it" : "Select a player first, then choose an action"}
           </DialogDescription>
         </DialogHeader>
 
@@ -197,9 +223,7 @@ export function EventDialog({
 
           {/* TAB: Players */}
           <TabsContent value="players">
-            {!players.length && (
-              <div className="text-center text-gray-500">No players available.</div>
-            )}
+            {!players.length && <div className="text-center text-gray-500">No players available.</div>}
             <ScrollArea className="h-[300px] pr-4">
               {/* Attack */}
               {attackPlayers.length > 0 && (
@@ -337,7 +361,7 @@ export function EventDialog({
                     {selectedPlayer.name.charAt(0)}
                   </div>
                   <span className="text-sm font-medium text-blue-700">
-                    Recording for: {selectedPlayer.name}
+                    Recording for: {selectedPlayer.name} ({selectedPlayer.position})
                   </span>
                   <Button
                     variant="ghost"
@@ -352,8 +376,8 @@ export function EventDialog({
 
               {/* Actions Grid */}
               <div className="grid grid-cols-4 gap-3 p-2 rounded-md bg-gray-50 dark:bg-gray-800">
-                {actions.map((action) => {
-                  const isSelected = action.id === selectedActionId;
+                {filteredActions.map((action) => {
+                  const isSelected = action.id === selectedActionId
                   return (
                     <button
                       key={action.id}
@@ -363,15 +387,11 @@ export function EventDialog({
                       onClick={() => handleActionClick(action.id)}
                     >
                       <div className="flex flex-col items-center justify-center">
-                        <div className="bg-white/20 rounded-full p-1 mb-1">
-                          {getActionIcon(action.code)}
-                        </div>
-                        <div className="text-center text-[10px] font-medium leading-tight">
-                          {action.description}
-                        </div>
+                        <div className="bg-white/20 rounded-full p-1 mb-1">{getActionIcon(action.code)}</div>
+                        <div className="text-center text-[10px] font-medium leading-tight">{action.description}</div>
                       </div>
                     </button>
-                  );
+                  )
                 })}
               </div>
 
@@ -398,13 +418,12 @@ export function EventDialog({
                   />
                   <div className="flex justify-end">
                     <Button
-                      
                       onClick={() => {
                         if (!selectedActionId) {
-                          alert("Please select an action first.");
-                          return;
+                          alert("Please select an action first.")
+                          return
                         }
-                        handleAddEvent(selectedActionId);
+                        handleAddEvent(selectedActionId, eventSuccess)
                       }}
                       disabled={!selectedActionId}
                       size="sm"
@@ -420,5 +439,6 @@ export function EventDialog({
         </Tabs>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
+

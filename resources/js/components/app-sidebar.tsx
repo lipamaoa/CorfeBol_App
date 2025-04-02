@@ -19,42 +19,23 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: "Log Game",
-        url: "/games", // Leva para a lista de jogos onde o usuário pode selecionar um para registrar
+        url: "/games", 
         icon: Trophy,
         children: [
           {
             title: "Active Games",
-            url: "/games?status=scheduled", // Filtrar por jogos agendados
+            url: "/games?status=scheduled", 
             icon: Trophy,
           },
           {
             title: "Recent Games",
-            url: "/games?status=completed", // Filtrar por jogos completados
+            url: "/games?status=completed", 
             icon: Trophy,
           },
         ],
       },
-    {
-        title: 'Teams',
-        url: '/teams',
-        icon: Medal,
-    },
-    {
-        title: 'Players',
-        url: '/players',
-        icon: Users,
-    },
-    {
-        title: 'Add Player',
-        url: '/players/create',
-        icon: UserPlus,
-    },
-    
-    {
-        title: 'Statistics',
-        url: '/statistics',
-        icon: BarChart3,
-    },
+  
+  
     
 ];
 

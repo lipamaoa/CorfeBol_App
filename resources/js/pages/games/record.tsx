@@ -1,4 +1,3 @@
-'use client';
 
 import Navbar from '@/components/navbar';
 import { EditEventDialog } from '@/components/record/EditEventDialog';
@@ -137,42 +136,42 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
         }
     }, [game?.id, period]);
 
- // ==============================
-  //  Initialize Score from Game
-  // ==============================
-  useEffect(() => {
-    // Inicializar os nomes das equipes
-    if (game) {
-      // Verificar se temos teamA/teamB ou team_a/team_b
-      if (game.teamA?.name) {
-        setTeamName(game.teamA.name)
-        setTeamALogo(game.teamA.logo_url || null)
-      } else if (game.team_a?.name) {
-        setTeamName(game.team_a.name)
-        setTeamALogo(game.team_a.logo_url || null)
-      } else {
-        setTeamName("Our Team")
-      }
+    // ==============================
+    //  Initialize Score from Game
+    // ==============================
+    useEffect(() => {
+        // Inicializar os nomes das equipes
+        if (game) {
+            // Verificar se temos teamA/teamB ou team_a/team_b
+            if (game.teamA?.name) {
+                setTeamName(game.teamA.name);
+                setTeamALogo(game.teamA.logo_url || null);
+            } else if (game.team_a?.name) {
+                setTeamName(game.team_a.name);
+                setTeamALogo(game.team_a.logo_url || null);
+            } else {
+                setTeamName('Our Team');
+            }
 
-      if (game.teamB?.name) {
-        setOpponentName(game.teamB.name)
-        setTeamBLogo(game.teamB.logo_url || null)
-      } else if (game.team_b?.name) {
-        setOpponentName(game.team_b.name)
-        setTeamBLogo(game.team_b.logo_url || null)
-      } else {
-        setOpponentName("Opponent Team")
-      }
+            if (game.teamB?.name) {
+                setOpponentName(game.teamB.name);
+                setTeamBLogo(game.teamB.logo_url || null);
+            } else if (game.team_b?.name) {
+                setOpponentName(game.team_b.name);
+                setTeamBLogo(game.team_b.logo_url || null);
+            } else {
+                setOpponentName('Opponent Team');
+            }
 
-      // Inicializar placar
-      if (game.score_team_a !== undefined && game.score_team_a !== null) {
-        setScore(game.score_team_a)
-      }
-      if (game.score_team_b !== undefined && game.score_team_b !== null) {
-        setOpponentScore(game.score_team_b)
-      }
-    }
-  }, [game])
+            // Inicializar placar
+            if (game.score_team_a !== undefined && game.score_team_a !== null) {
+                setScore(game.score_team_a);
+            }
+            if (game.score_team_b !== undefined && game.score_team_b !== null) {
+                setOpponentScore(game.score_team_b);
+            }
+        }
+    }, [game]);
 
     // ==============================
     //  Initialize Score from Past Events
@@ -307,8 +306,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
             player_id: null,
             action_id: actions.find((a) => a.code === 'O')?.id || 0,
             success: null,
-            event_id: currentPhaseEvent?.id || '1', // Usar o ID do evento atual ou fallback para "1"
-            event_type: 'period_change',
+            event_id: currentPhaseEvent?.id || '1',
             description: `Period ${newPeriod} started`,
             time: formatTime(matchTime),
         };
@@ -486,12 +484,12 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
     // ============ recordEvent (createStat => backend) ============
     const recordEvent = async (eventData: Stat) => {
-        if (isSubmitting) return;
-
-        setIsSubmitting(true);
-        const eventToSend = { ...eventData };
+        if (isSubmitting) return
+    
+        setIsSubmitting(true)
+        const eventToSend = { ...eventData }
         console.log('Sending event data:', eventToSend);
-
+    
         // Temp event for immediate UI feedback
         const tempEvent: Stat = {
             ...eventToSend,
@@ -499,16 +497,16 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
             created_at: new Date().toISOString(),
         };
         setEvents((prev) => [tempEvent, ...prev]);
-
+    
         try {
             const result = await createStat(eventToSend);
             if (result.success && result.event) {
                 const newEvent = result.event;
                 setEvents((prev) => prev.map((ev) => (ev.id === tempEvent.id ? newEvent : ev)));
-
-                // if it's a successful goal => increment score
+    
+                // Incrementar o placar APENAS se for uma ação de gol (G) bem-sucedida
                 const action = actions.find((a) => a.id === newEvent.action_id);
-                if (action?.code === 'G' && newEvent.success) {
+                if (action?.code === "G" && newEvent.success) {
                     setScore((prevScore) => {
                         const newScore = prevScore + 1;
                         localStorage.setItem(`game_${game?.id}_score`, newScore.toString());
@@ -529,13 +527,40 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
     // ============ handleEditEvent / handleDeleteEvent ============
     const handleEditEvent = async () => {
-        if (!currentEditEvent || isSubmitting) return;
-        setIsSubmitting(true);
-
+        if (!currentEditEvent || isSubmitting) return
+        setIsSubmitting(true)
+    
+        // Guarde o evento original antes da edição para comparação posterior
+        const originalEvent = events.find((ev) => ev.id === currentEditEvent.id)
+        const originalAction = originalEvent ? actions.find((a) => a.id === originalEvent.action_id) : null
+        const wasSuccessfulGoal = originalAction?.code === "G" && originalEvent?.success === true
+    
         try {
             const result = await updateStat(currentEditEvent.id, currentEditEvent);
             if (result.success && result.event) {
                 setEvents((prev) => prev.map((ev) => (ev.id === currentEditEvent.id ? result.event : ev)));
+    
+                // Verificar se a edição afeta o placar
+                const newAction = actions.find((a) => a.id === result.event.action_id);
+                const isNowSuccessfulGoal = newAction?.code === "G" && result.event.success === true;
+    
+                // Atualizar o placar se necessário
+                if (wasSuccessfulGoal && !isNowSuccessfulGoal) {
+                    // Era um gol bem-sucedido e agora não é - decrementar o placar
+                    setScore((prevScore) => {
+                        const newScore = Math.max(0, prevScore - 1);
+                        localStorage.setItem(`game_${game?.id}_score`, newScore.toString());
+                        return newScore;
+                    });
+                } else if (!wasSuccessfulGoal && isNowSuccessfulGoal) {
+                    // Não era um gol bem-sucedido e agora é - incrementar o placar
+                    setScore((prevScore) => {
+                        const newScore = prevScore + 1;
+                        localStorage.setItem(`game_${game?.id}_score`, newScore.toString());
+                        return newScore;
+                    });
+                }
+    
                 setEditEventDialogOpen(false);
                 setCurrentEditEvent(null);
             } else {
@@ -551,11 +576,25 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
     const handleDeleteEvent = async (eventId: number | string) => {
         if (!confirm('Are you sure you want to delete this event?')) return;
         setIsSubmitting(true);
-
+    
+        // Verificar se o evento a ser excluído é um gol bem-sucedido
+        const eventToDelete = events.find((ev) => ev.id === eventId);
+        const actionToDelete = eventToDelete ? actions.find((a) => a.id === eventToDelete.action_id) : null;
+        const isSuccessfulGoal = actionToDelete?.code === "G" && eventToDelete?.success === true;
+    
         try {
             const result = await deleteStat(eventId as number);
             if (result.success) {
                 setEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+                
+                // Se era um gol bem-sucedido, decrementar o placar
+                if (isSuccessfulGoal) {
+                    setScore((prevScore) => {
+                        const newScore = Math.max(0, prevScore - 1);
+                        localStorage.setItem(`game_${game?.id}_score`, newScore.toString());
+                        return newScore;
+                    });
+                }
             } else {
                 alert(`Failed to delete event: ${result.message || 'Unknown error'}`);
             }
@@ -578,77 +617,129 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
      * handleAddEvent recebe actionId como parâmetro,
      * em vez de depender de selectedActionId do state
      */
-    const handleAddEvent = async (actionId: number) => {
+    const handleAddEvent = async (actionId: number, success?: boolean) => {
         if (!selectedPlayer) {
-            alert('Please select a player first.');
-            return;
+          alert("Please select a player first.")
+          return
         }
-
-        const action = actions.find((a) => a.id === actionId);
+    
+        const action = actions.find((a) => a.id === actionId)
         if (!action) {
-            alert('Invalid action selected.');
-            return;
+          alert("Invalid action selected.")
+          return
         }
-
+    
         // Se for Substitution
-        if (action.code === 'S') {
-            setSubDialogPlayer(selectedPlayer);
-            setShowSubDialog(true);
-            setEventDialogOpen(false);
-            // limpar states do EventDialog
-            setEventSuccess(true);
-            setEventDescription('');
-            return;
+        if (action.code === "S") {
+          setSubDialogPlayer(selectedPlayer)
+          setShowSubDialog(true)
+          setEventDialogOpen(false)
+          // limpar states do EventDialog
+          setEventSuccess(true)
+          setEventDescription("")
+          return
         }
-
+    
         // Se for Position Switch
-        if (action.code === 'PS') {
-            switchAttackDefense();
-            setEventDialogOpen(false);
-            setEventSuccess(true);
-            setSelectedPlayer(null);
-            setEventDescription('');
-            return;
+        if (action.code === "PS") {
+          switchAttackDefense()
+          setEventDialogOpen(false)
+          setEventSuccess(true)
+          setSelectedPlayer(null)
+          setEventDescription("")
+          return
         }
-
+    
         try {
-            // Verificar se há um evento ativo, se não, buscar novamente
-            if (!currentPhaseEvent) {
-                await fetchCurrentPhase();
-            }
-
-            // Se ainda não houver evento ativo, alertar o usuário
-            if (!currentPhaseEvent) {
-                alert('Nenhum evento ativo encontrado. Por favor, inicie um evento de ataque ou defesa primeiro.');
-                setEventDialogOpen(false);
-                return;
-            }
-
-            // Caso padrão => evento normal
-            const description = eventDescription || `${selectedPlayer.name} - ${action.description || 'Action'}`;
-
+          // Verificar se há um evento ativo, se não, buscar novamente
+          if (!currentPhaseEvent) {
+            await fetchCurrentPhase()
+          }
+    
+          // Se ainda não houver evento ativo, alertar o usuário
+          if (!currentPhaseEvent) {
+            alert("Nenhum evento ativo encontrado. Por favor, inicie um evento de ataque ou defesa primeiro.")
+            setEventDialogOpen(false)
+            return
+          }
+    
+          // Usar o valor de success se fornecido, caso contrário usar o estado eventSuccess
+          const isSuccess = success !== undefined ? success : eventSuccess
+    
+          // Se for um Gol Sofrido (GS), incrementar a pontuação do adversário
+          if (action.code === "GS") {
+            // Incrementar a pontuação do adversário
+            setOpponentScore((prev) => {
+              const newScore = prev + 1
+              localStorage.setItem(`game_${game?.id}_opponent_score`, newScore.toString())
+              return newScore
+            })
+    
+            // Atualizar a descrição para incluir o nome do defensor
+            const description = eventDescription || `Gol sofrido (defensor: ${selectedPlayer.name})`
+    
             const eventData: Stat = {
-                game_id: game?.id ?? 0,
-                player_id: selectedPlayer.id,
-                action_id: actionId,
-                success: eventSuccess,
-                event_id: currentPhaseEvent.id,
-                description,
-                time: formatTime(matchTime),
-            };
-
-            recordEvent(eventData);
-            setEventDialogOpen(false);
-
-            // reset
-            setEventSuccess(true);
-            setSelectedPlayer(null);
-            setEventDescription('');
+              game_id: game?.id ?? 0,
+              player_id: selectedPlayer.id,
+              action_id: actionId,
+              success: true, // Sempre true para gols sofridos
+              event_id: currentPhaseEvent.id,
+              description,
+              time: formatTime(matchTime),
+            }
+    
+            await recordEvent(eventData)
+          } else {
+            // Caso padrão => evento normal
+            const description =
+              eventDescription ||
+              `${selectedPlayer.name} - ${action.description || "Action"} ${isSuccess ? "(Convertido)" : "(Errado)"}`
+    
+            const eventData: Stat = {
+              game_id: game?.id ?? 0,
+              player_id: selectedPlayer.id,
+              action_id: actionId,
+              success: isSuccess,
+              event_id: currentPhaseEvent.id,
+              description,
+              time: formatTime(matchTime),
+            }
+    
+            await recordEvent(eventData)
+    
+            // Se for um arremesso bem-sucedido, registrar automaticamente um gol
+            const shotActionCodes = ["LC", "LM", "LL", "L", "Pe"]
+            if (shotActionCodes.includes(action.code) && isSuccess) {
+              // Encontrar a ação de gol
+              const goalAction = actions.find((a) => a.code === "G")
+              if (goalAction) {
+                // Criar um evento de gol
+                const goalEventData: Stat = {
+                  game_id: game?.id ?? 0,
+                  player_id: selectedPlayer.id,
+                  action_id: goalAction.id,
+                  success: true, // Sempre true para gols
+                  event_id: currentPhaseEvent.id,
+                  description: `${selectedPlayer.name} - Gol (${action.description})`,
+                  time: formatTime(matchTime),
+                }
+    
+                // Registrar o evento de gol
+                await recordEvent(goalEventData)
+              }
+            }
+          }
+    
+          setEventDialogOpen(false)
+          // reset
+          setEventSuccess(true)
+          setSelectedPlayer(null)
+          setEventDescription("")
         } catch (error) {
-            console.error('Erro ao adicionar evento:', error);
-            toast.error('Erro ao adicionar evento. Verifique se há um evento ativo.');
+          console.error("Erro ao adicionar evento:", error)
+          toast.error("Erro ao adicionar evento. Verifique se há um evento ativo.")
         }
-    };
+      }
 
     // ============ handleSubstitutionComplete ============
     const handleSubstitutionComplete = (incoming: Player) => {
@@ -671,8 +762,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                 player_id: outgoing.id,
                 action_id: actions.find((a) => a.code === 'S')?.id || 0,
                 success: true,
-                event_id: currentPhaseEvent?.id || '1', // Usar o ID do evento atual ou fallback para "1"
-                event_type: 'player_action',
+                event_id: currentPhaseEvent?.id || '1',
                 description: `${outgoing.name} substituted by ${incoming.name} (${oldZone} ↔ ${incZone})`,
                 time: formatTime(matchTime),
             };
@@ -687,8 +777,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                 player_id: outgoing.id,
                 action_id: actions.find((a) => a.code === 'S')?.id || 0,
                 success: true,
-                event_id: currentPhaseEvent?.id || '1', // Usar o ID do evento atual ou fallback para "1"
-                event_type: 'player_action',
+                event_id: currentPhaseEvent?.id || '1',
                 description: `${outgoing.name} substituted by ${incoming.name} (${oldZone})`,
                 time: formatTime(matchTime),
             };
@@ -750,7 +839,6 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                     action_id: actions.find((a) => a.code === 'O')?.id || 0,
                     success: null,
                     event_id: currentPhaseEvent.id,
-                    event_type: 'phase_end',
                     description: `End of ${currentPhaseEvent.name === 'attack' ? 'attack' : 'defense'} phase (position switch)`,
                     time: formatTime(matchTime),
                 };
@@ -776,7 +864,6 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
             action_id: actions.find((a) => a.code === 'PS')?.id || 0,
             success: true,
             event_id: currentPhaseEvent?.id || '1',
-            event_type: 'position_switch',
             description: 'Position switch: attack and defense',
             time: formatTime(matchTime),
         };
@@ -836,18 +923,26 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
         setOpponentScore((prev) => {
             const newScore = prev + 1;
             localStorage.setItem(`game_${game?.id}_opponent_score`, newScore.toString());
+
+            // Registrar uma estatística de gol sofrido
+            // Você pode atribuir isso ao jogador que estava defendendo ou deixar player_id como null
+            const eventData: Stat = {
+                game_id: game?.id ?? 0,
+                player_id: null, // ou o ID do jogador que estava defendendo
+                action_id: actions.find((a) => a.code === 'GS')?.id || 0,
+                success: true, // sempre true para gols sofridos
+                event_id: currentPhaseEvent?.id || null,
+                description: 'Gol sofrido',
+                time: formatTime(matchTime),
+            };
+
+            recordEvent(eventData);
+
             return newScore;
         });
     }
 
-    function decrementOpponentScore() {
-        setOpponentScore((prev) => {
-            const newScore = Math.max(0, prev - 1);
-            localStorage.setItem(`game_${game?.id}_opponent_score`, newScore.toString());
-            return newScore;
-        });
-    }
-
+  
     // Se o GameField/child atualiza localmente a posição de um player
     function onPlayerPositionUpdated(updatedPlayer: Player) {
         setPlayers((prev) => prev.map((p) => (p.id === updatedPlayer.id ? updatedPlayer : p)));
@@ -855,58 +950,57 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
 
     // Build the game context to pass down
     const gameContext = {
-      game,
-      actions,
-      players,
-      events,
-      matchTime,
-      isRunning,
-      period,
-      score,
-      opponentScore,
-      teamName,
-      teamALogo,
-      teamBLogo,
-      opponentName,
-      currentPhaseEvent,
-  
-      formatTime,
-      toggleTimer,
-      resetTimer,
-      changePeriod,
-      switchAttackDefense,
-      endGame,
-      incrementOpponentScore,
-      decrementOpponentScore,
-  
-      getAttackPlayers,
-      getDefensePlayers,
-      getSubstitutes,
-  
-      openEditDialog,
-      handleDeleteEvent,
-      recordEvent,
-  
-      updatePlayerPosition,
-      updateLocalPlayerPosition,
-      positionedPlayers,
-      onPlayerPositionUpdated,
-      initialSetupComplete,
-      toggleSetupMode,
-      completeInitialSetup,
-  
-      handlePlayerClick: (player: Player) => {
-        setSelectedPlayer(player)
-        setEventDialogOpen(true)
-      },
-  
-      onPhaseChange: () => {
-        fetchCurrentPhase()
-      },
-      recordGameEvent: (eventData: Stat) => {
-        recordEvent(eventData)
-      },
-    }
+        game,
+        actions,
+        players,
+        events,
+        matchTime,
+        isRunning,
+        period,
+        score,
+        opponentScore,
+        teamName,
+        teamALogo,
+        teamBLogo,
+        opponentName,
+        currentPhaseEvent,
+
+        formatTime,
+        toggleTimer,
+        resetTimer,
+        changePeriod,
+        switchAttackDefense,
+        endGame,
+       
+
+        getAttackPlayers,
+        getDefensePlayers,
+        getSubstitutes,
+
+        openEditDialog,
+        handleDeleteEvent,
+        recordEvent,
+
+        updatePlayerPosition,
+        updateLocalPlayerPosition,
+        positionedPlayers,
+        onPlayerPositionUpdated,
+        initialSetupComplete,
+        toggleSetupMode,
+        completeInitialSetup,
+
+        handlePlayerClick: (player: Player) => {
+            setSelectedPlayer(player);
+            setEventDialogOpen(true);
+        },
+
+        onPhaseChange: () => {
+            fetchCurrentPhase();
+        },
+        recordGameEvent: (eventData: Stat) => {
+            recordEvent(eventData);
+        },
+    };
 
     return (
         <>
@@ -993,8 +1087,6 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                                 handleEditEvent={handleEditEvent}
                                 actions={actions}
                             />
-
-                           
                         </div>
                     </div>
                 </div>
