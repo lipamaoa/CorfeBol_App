@@ -164,6 +164,7 @@ export default function Games({ games: initialGames, status = "all" }: GamesProp
                               {game.team_a.name} vs {game.team_b.name}
                             </CardTitle>
                             <Badge
+                             className="whitespace-nowrap px-3 py-1 text-center"
                               variant={
                                 game.status === "completed"
                                   ? "success"
