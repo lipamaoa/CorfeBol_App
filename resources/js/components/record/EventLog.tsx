@@ -1,4 +1,3 @@
-"use client"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +10,7 @@ import { getEventIcon, getEventColor } from "@/utils/eventHelpers"
 
 interface EventLogProps {
   gameContext: {
-    game: Game
+    game?: Game
     events: Stat[]
     players: Player[]
     actions: Action[]
@@ -80,7 +79,7 @@ export function EventLog({ gameContext, setEventDialogOpen }: EventLogProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteEvent(event.id)}
+                          onClick={() => handleDeleteEvent(event.id as number)}
                           className="h-7 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-3.5 w-3.5 mr-1" />

@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { Player } from "@/types/index"
+import type { Player, Game } from "@/types/index"
 import { Plus, Shield, Swords, X } from "lucide-react"
 
 interface PlayerAvatarProps {
@@ -29,7 +29,7 @@ interface FieldPositionProps {
 }
 
 interface GameContext {
-  game: { id: string }
+  game?: Partial<Game>
   players: Player[]
   handlePlayerClick: (arg0: Player) => void
   getAttackPlayers: () => Player[]
@@ -41,8 +41,24 @@ interface GameContext {
   toggleSetupMode: () => void
 }
 
-// Player component
+// Player avatar component
 const PlayerAvatar = ({ player, onClick, isSelected = false }: PlayerAvatarProps) => {
+
+  const getPhotoUrl = (url: string | undefined) => {
+    if (!url) return null
+
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url
+    }
+
+    
+    const storageUrl = `/storage/${url.replace(/^\/+/, "")}`
+    return storageUrl
+  }
+
+  const photoUrl = player.photo ? getPhotoUrl(player.photo) : null
+
   return (
     <div
       className={`cursor-pointer transition-all ${isSelected ? "scale-110 ring-2 ring-yellow-400" : ""}`}
@@ -50,9 +66,25 @@ const PlayerAvatar = ({ player, onClick, isSelected = false }: PlayerAvatarProps
     >
       <div
         className={`flex items-center justify-center rounded-full font-bold text-white ${player.gender === "male" ? "bg-blue-400" : "bg-pink-400"} transition-all hover:ring-2 hover:ring-yellow-400`}
-        style={{ width: "3rem", height: "3rem" }}
+        style={{ width: "3rem", height: "3rem", overflow: "hidden" }}
       >
-        {player.name.charAt(0)}
+        {photoUrl ? (
+          <img
+            src={photoUrl || "/placeholder.svg"}
+            alt={player.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              
+              console.error(`Failed to load image: ${photoUrl}`)
+              e.currentTarget.style.display = "none"
+              if (e.currentTarget.parentElement) {
+                e.currentTarget.parentElement.textContent = player.name.charAt(0)
+              }
+            }}
+          />
+        ) : (
+          player.name.charAt(0)
+        )}
       </div>
       <div className="mt-1 rounded bg-white/80 px-1 text-center text-xs font-semibold">{player.name.split(" ")[0]}</div>
     </div>
@@ -327,8 +359,7 @@ export function GameField({ gameContext }: { gameContext: GameContext }) {
               {/* Defense positions */}
               <div className="relative flex-1 p-4">
                 {defensePositions.map((position, index) => {
-                  // Find the player at this specific position using local state
-                  // Important: Check if positionIndex is exactly equal to the index
+                 
                   const playerAtPosition = defensePlayers.find((p) => Number(p.positionIndex) === index)
 
                   console.log(`Defense position ${index}:`, position, "Player:", playerAtPosition)

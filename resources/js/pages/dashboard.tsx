@@ -24,7 +24,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
     const [selectedTeamId, setSelectedTeamId] = useState(null);
     const [gameStats, setGameStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('overview');
+    
 
     // Function to update teams
     const updateTeams = async () => {

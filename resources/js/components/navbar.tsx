@@ -56,16 +56,11 @@ export default function Navbar() {
             <>
               <Link
                 href={window.route("login")}
-                className="text-sm font-medium px-4 py-2 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                 className="text-sm font-medium px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition-colors"
               >
                 Log in
               </Link>
-              <Link
-                href={window.route("register")}
-                className="text-sm font-medium px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-              >
-                Register
-              </Link>
+            
             </>
           )}
         </nav>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import Navbar from '@/components/navbar';
 
 interface RegisterForm {
     name: string;
@@ -32,6 +33,8 @@ export default function Register() {
     };
 
     return (
+<>
+             <Navbar />
         <AuthLayout title="Create an account" description="Enter your details below to create your account">
             <Head title="Register" />
             <form className="flex flex-col gap-6" onSubmit={submit}>
@@ -49,7 +52,7 @@ export default function Register() {
                             onChange={(e) => setData('name', e.target.value)}
                             disabled={processing}
                             placeholder="Full name"
-                        />
+                            />
                         <InputError message={errors.name} className="mt-2" />
                     </div>
 
@@ -65,7 +68,7 @@ export default function Register() {
                             onChange={(e) => setData('email', e.target.value)}
                             disabled={processing}
                             placeholder="email@example.com"
-                        />
+                            />
                         <InputError message={errors.email} />
                     </div>
 
@@ -81,7 +84,7 @@ export default function Register() {
                             onChange={(e) => setData('password', e.target.value)}
                             disabled={processing}
                             placeholder="Password"
-                        />
+                            />
                         <InputError message={errors.password} />
                     </div>
 
@@ -115,5 +118,6 @@ export default function Register() {
                 </div>
             </form>
         </AuthLayout>
+                            </>
     );
 }

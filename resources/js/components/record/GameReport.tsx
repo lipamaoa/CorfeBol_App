@@ -1,18 +1,26 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Game } from "@/types";
 import { useState, useEffect } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
 interface GameContext {
-  game: { date?: string };
+  game?: Partial<Game>;
   players: { id: number; name: string }[];
-  events: { player_id: number; action_id: number; success?: boolean; period?: number; time?: string }[];
+  events: {
+    player_id: number | null;
+    action_id: number;
+    success?: boolean | null;
+    period?: number;
+    time?: string;
+  }[];
   actions: { id: number; code: string }[];
   teamName: string;
   opponentName: string;
   score: number;
   opponentScore: number;
 }
+
 
 export function GameReport({ gameContext }: { gameContext: GameContext }) {
   const { game, players, events, actions, teamName, opponentName, score, opponentScore } = gameContext
