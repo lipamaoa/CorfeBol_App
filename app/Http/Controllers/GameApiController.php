@@ -107,25 +107,20 @@ class GameApiController extends Controller
         $request->validate([
             'team_a_id' => 'required|exists:teams,id',
             'team_b_id' => 'required|exists:teams,id',
-            'date' => 'required|date', // Mudança aqui
+            'date' => 'required|date', 
             'location' => 'nullable|string|max:255',
             'status' => 'string|max:50'
         ]);
 
 
-       /*  if ($request->has('team_a_id')) $game->team_a_id = $request->team_a_id;
-        if ($request->has('team_b_id')) $game->team_b_id = $request->team_b_id;
-        if ($request->has('date')) $game->datetime = $request->datetime;
-        if ($request->has('location')) $game->location = $request->location;
-        if ($request->has('status')) $game->status = $request->status; */
+      
 
-        // Atualizar campos diretamente
+       
         $game->team_a_id = $request->team_a_id;
         $game->team_b_id = $request->team_b_id;
         $game->date = $request->date;
         $game->location = $request->location ?? null;
 
-        // Verificar status opcional
         if ($request->has('status')) {
         $game->status = $request->status;
         }
@@ -179,21 +174,21 @@ class GameApiController extends Controller
 public function getGameReport($id)
 {
     try {
-        // Carregar o jogo com relacionamentos
+        
         $game = Game::with(['teamA', 'teamB'])->findOrFail($id);
         
-        // Obter todos os jogadores para este jogo
+       
         $players = Player::where('team_id', $game->team_a_id)
             ->orWhere('team_id', $game->team_b_id)
             ->get();
         
-        // Obter todas as ações
+       
         $actions = Action::all();
         
-        // Obter todas as estatísticas para este jogo
+        
         $stats = Stat::where('game_id', $id)->get();
         
-        // Log para debug
+      
         Log::info("Game report data for game {$id}:", [
             'game' => $game->toArray(),
             'players_count' => $players->count(),
