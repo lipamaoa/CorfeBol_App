@@ -167,9 +167,18 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                                             <div className="flex flex-col">
                                                 <div className="flex items-center justify-center gap-12">
                                                     <div className="flex flex-col items-center space-y-1">
-                                                        <div className="bg-primary/5 flex h-14 w-14 items-center justify-center rounded-full text-xl font-bold">
-                                                            {nextGame?.team_a?.name?.charAt(0) || '?'}
-                                                        </div>
+                                                        {nextGame?.team_a?.photo ? (
+                                                            <div className="h-15 w-15 rounded-full overflow-hidden flex-shrink-0">
+                                                                <img
+                                                                    src={`/storage/${nextGame?.team_a?.photo}`}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex h-15 w-15 items-center justify-center rounded-full font-semibold bg-gray-300 text-black-700">
+                                                                {nextGame?.team_a?.name?.charAt(0).toUpperCase()}
+                                                            </div>
+                                                        )}
                                                         <span className="text-sm font-medium">{nextGame?.team_a?.name || 'Unknown Team'}</span>
                                                         <span className="text-muted-foreground text-xs">Home</span>
                                                     </div>
@@ -179,9 +188,18 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                                                     </div>
 
                                                     <div className="flex flex-col items-center space-y-1">
-                                                        <div className="bg-primary/5 flex h-14 w-14 items-center justify-center rounded-full text-xl font-bold">
-                                                            {nextGame?.team_b?.name?.charAt(0) || '?'}
-                                                        </div>
+                                                        {nextGame?.team_b?.photo ? (
+                                                            <div className="h-15 w-15 rounded-full overflow-hidden flex-shrink-0">
+                                                                <img
+                                                                    src={`/storage/${nextGame?.team_b?.photo}`}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex h-15 w-15 items-center justify-center rounded-full font-semibold bg-gray-300 text-black-700">
+                                                                {nextGame?.team_b?.name?.charAt(0).toUpperCase()}
+                                                            </div>
+                                                        )}
                                                         <span className="text-sm font-medium">{nextGame?.team_b?.name || 'Unknown Team'}</span>
                                                         <span className="text-muted-foreground text-xs">Away</span>
                                                     </div>
@@ -208,7 +226,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                                                 {/* Action buttons in a row */}
                                                 <div className="mt-3 flex items-center justify-center gap-3">
                                                     <Button asChild size="sm">
-                                                        <Link href={`/games/record?game=${nextGame?.id}`} className="flex items-center gap-1.5">
+                                                        <Link href={`/games/${nextGame?.id}/record`} className="flex items-center gap-1.5">
                                                             <ClipboardList className="h-3.5 w-3.5" />
                                                             Record Game
                                                         </Link>
@@ -276,7 +294,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                         />
                     </div>
                 </div>
-            </AppLayout>
+            </AppLayout >
         </>
     );
 }
