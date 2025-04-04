@@ -16,17 +16,18 @@ interface DashboardProps {
     stats: Stat;
 }
 
-export default function Dashboard({ nextGame, stats:propStats }: DashboardProps) {
+export default function Dashboard({ nextGame, stats: propStats }: DashboardProps) {
     const [dashboardStats, setDashboardStats] = useState(propStats)
     const [teams, setTeams] = useState([]);
     const [players, setPlayers] = useState([]);
     const [games, setGames] = useState<Game[]>([]);
     const [selectedTeamId, setSelectedTeamId] = useState(null);
     const [gameStats, setGameStats] = useState<{ game?: Game; stats?: Stat[]; events?: Event[]; players?: Player[]; actions?: Action[] } | null>(null);
+    const [gameStat, setGameStat] = useState([]);
     const [loading, setLoading] = useState(true);
     const [events, setEvents] = useState([]);
 
-        // Function to update teams
+    // Function to update teams
     const updateEvents = async () => {
         try {
             const response = await fetch('api/events', {
@@ -45,32 +46,32 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
     };
 
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (propStats) {
-        setDashboardStats(propStats)
-        return
-      }
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (propStats) {
+                setDashboardStats(propStats)
+                return
+            }
 
-      try {
-        setLoading(true)
-        const response = await fetch("/api/dashboard/stats")
+            try {
+                setLoading(true)
+                const response = await fetch("/api/dashboard/stats")
 
-        if (!response.ok) {
-          throw new Error(`Error fetching stats: ${response.status}`)
+                if (!response.ok) {
+                    throw new Error(`Error fetching stats: ${response.status}`)
+                }
+
+                const data = await response.json()
+                setDashboardStats(data)
+            } catch (err) {
+                console.error("Failed to fetch stats:", err)
+            } finally {
+                setLoading(false)
+            }
         }
 
-        const data = await response.json()
-        setDashboardStats(data)
-      } catch (err) {
-        console.error("Failed to fetch stats:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchStats()
-  }, [propStats])
+        fetchStats()
+    }, [propStats])
 
     const updateTeams = async () => {
         try {
@@ -171,7 +172,7 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
                 setLoading(true);
                 const response = await fetch('/api/stats');
                 const data = await response.json();
-                setGameStats(data);
+                setGameStat(data);
                 console.log('Game Stats:', data);
                 // Also fetch game-specific data for the coach stats card
                 // const gameResponse = await fetch('/api/games/latest/stats');
@@ -326,7 +327,7 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
                         />
                         <StatsCard
                             gameId={games[games.length - 1]?.id}
-                            stats={gameStats?.stats}
+                            stats={gameStat}
                             events={events}
                             players={players}
                         />
