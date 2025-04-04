@@ -37,7 +37,7 @@ interface GameHeaderProps {
     recordEvent: (eventData: Stat) => Promise<void>
     getAttackPlayers: () => Player[]
     getDefensePlayers: () => Player[]
-    recordGameEvent: (eventData: Omit<Event, "id" | "created_at" | "updated_at">) => Promise<void>
+    recordGameEvent: (eventData: Stat) => void | Promise<void>
     onPhaseChange?: () => void 
   }
 }
@@ -154,7 +154,7 @@ export function GameHeader({ gameContext }: GameHeaderProps) {
           player_id: null,
           action_id: actions.find((a) => a.code === "O")?.id || 0,
           success: null,
-          event_id: (response.event as Event).id,
+          event_id: (response.event as Event).id ?? 0,
           description: `Start of ${phaseName === "attack" ? "attack" : "defense"} phase`,
           time: formatTime(matchTime),
         }

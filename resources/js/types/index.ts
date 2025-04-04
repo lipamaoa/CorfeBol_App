@@ -49,6 +49,7 @@ export interface Player {
     team_id: number
     positionIndex?: number
     zone?: "attack" | "defense" | "bench"
+    photo?: string;
   }
   
   export interface Action {
@@ -74,6 +75,9 @@ export interface Player {
     score_team_a?: number | null
     score_team_b?: number | null
     status: "scheduled" | "in_progress" | "completed"
+    location: string
+    date: string
+    time: string
     
   }
 
@@ -91,7 +95,7 @@ export interface Player {
 
 
   export interface Event {
-    id: number
+    id?: number
     name: string
     player_id: number
     game_id: number
