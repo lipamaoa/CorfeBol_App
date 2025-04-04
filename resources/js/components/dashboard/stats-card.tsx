@@ -4,24 +4,24 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Clock, Repeat, TrendingUp, Target, Users, ArrowRight, BarChart3, Hourglass } from "lucide-react"
-import type { Player, Action,Stat, Event,Game } from "@/types/index"
+import type { Player, Action, Stat, Event, Game } from "@/types/index"
 
 
 
 interface CoachStatsCardProps {
-  gameId?: number
-  stats?: Stat[]
-  events?: Event[]
-  players?: Player[]
-  actions?: Action[]
+    gameId?: number
+    stats?: Stat[]
+    events?: Event[]
+    players?: Player[]
+    actions?: Action[]
 }
 
 export default function StatsCard({
-  gameId,
-  stats = [],
-  events = [],
-  players = [],
-  actions = [],
+    gameId,
+    stats = [],
+    events = [],
+    players = [],
+    actions = [],
 }: CoachStatsCardProps) {
     const [activeTab, setActiveTab] = useState("phases")
 
