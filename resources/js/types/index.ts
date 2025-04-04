@@ -61,7 +61,8 @@ export interface Player {
   export interface Team {
     id: number
     name: string
-    logo_url: string | null
+    photo: string | null
+
   }
   
   export interface Game {
@@ -78,6 +79,7 @@ export interface Player {
     location: string
     date: string
     time: string
+    
     
   }
 

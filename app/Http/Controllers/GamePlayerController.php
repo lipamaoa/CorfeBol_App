@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Log;
 
 class GamePlayerController extends Controller
 {
-    /**
-     * Atualiza a posição de um jogador em um jogo.
-     */
     public function updatePosition(Request $request)
     {
         $request->validate([
@@ -22,7 +19,6 @@ class GamePlayerController extends Controller
         Log::debug($request);
 
         try {
-            
             $updated = GamePlayer::where('game_id', $request->game_id)
                 ->where('player_id', $request->player_id)
                 ->update([
@@ -41,7 +37,7 @@ class GamePlayerController extends Controller
                     ->first();
             }
 
-            Log::info('Posição do jogador atualizada', [
+            Log::info('Player position updated', [
                 'game_id' => $request->game_id,
                 'player_id' => $request->player_id,
                 'initial_position' => $request->initial_position
@@ -49,11 +45,11 @@ class GamePlayerController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Posição do jogador atualizada com sucesso',
+                'message' => 'Player position updated successfully',
                 'data' => $gamePlayer
             ]);
         } catch (\Exception $e) {
-            Log::error('Erro ao atualizar posição do jogador', [
+            Log::error('Failed to update player position', [
                 'error' => $e->getMessage(),
                 'game_id' => $request->game_id,
                 'player_id' => $request->player_id,
@@ -62,14 +58,11 @@ class GamePlayerController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao atualizar posição do jogador: ' . $e->getMessage()
+                'message' => 'Failed to update player position: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    /**
-     * Obter todos os jogadores de um jogo com suas posições
-     */
     public function getGamePlayers($gameId)
     {
         try {
@@ -84,21 +77,21 @@ class GamePlayerController extends Controller
                 return $player;
             });
 
-            Log::info('Jogadores do jogo obtidos', [
+            Log::info('Fetched game players', [
                 'game_id' => $gameId,
                 'players' => $players
             ]);
 
             return response()->json($players);
         } catch (\Exception $e) {
-            Log::error('Erro ao obter jogadores do jogo', [
+            Log::error('Failed to fetch game players', [
                 'error' => $e->getMessage(),
                 'game_id' => $gameId
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao obter jogadores do jogo: ' . $e->getMessage()
+                'message' => 'Failed to fetch game players: ' . $e->getMessage()
             ], 500);
         }
     }

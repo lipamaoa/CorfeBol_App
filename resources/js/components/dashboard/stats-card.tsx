@@ -1,10 +1,9 @@
-"use client"
 
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Clock, Repeat, TrendingUp, Target, Users, ArrowRight, BarChart3, Hourglass } from "lucide-react"
-import type { Player, Action,Stat, Event,Game } from "@/types/index"
+import type { Player, Action,Stat, Event } from "@/types/index"
 
 
 
@@ -440,7 +439,7 @@ function calculatePhaseStats(events: Event[], stats: Stat[]) {
     if (event.start_time && event.end_time) {
       const start = new Date(event.start_time).getTime()
       const end = new Date(event.end_time).getTime()
-      totalAttackDuration += (end - start) / 1000 // in seconds
+      totalAttackDuration += (end - start) / 1000 
     }
   })
 
@@ -448,21 +447,21 @@ function calculatePhaseStats(events: Event[], stats: Stat[]) {
     if (event.start_time && event.end_time) {
       const start = new Date(event.start_time).getTime()
       const end = new Date(event.end_time).getTime()
-      totalDefenseDuration += (end - start) / 1000 // in seconds
+      totalDefenseDuration += (end - start) / 1000 
     }
   })
 
   // Count goals and steals
   const attackGoals = stats.filter(
     (s) =>
-      s.action_id === 1 && // Assuming action_id 1 is for goals
+      s.action_id === 1 && 
       s.success === true &&
       attackEvents.some((e) => e.id === s.event_id),
   ).length
 
   const defenseSteals = stats.filter(
     (s) =>
-      s.action_id === 15 && // Assuming action_id 15 is for steals
+      s.action_id === 15 && 
       s.success === true &&
       defenseEvents.some((e) => e.id === s.event_id),
   ).length
@@ -591,7 +590,7 @@ function calculatePossessionMetrics(stats: Stat[], events: Event[], actions: Act
     if (event.start_time && event.end_time) {
       const start = new Date(event.start_time).getTime()
       const end = new Date(event.end_time).getTime()
-      attackPossessionTime += (end - start) / 1000 // in seconds
+      attackPossessionTime += (end - start) / 1000 
     }
   })
 
@@ -599,7 +598,7 @@ function calculatePossessionMetrics(stats: Stat[], events: Event[], actions: Act
     if (event.start_time && event.end_time) {
       const start = new Date(event.start_time).getTime()
       const end = new Date(event.end_time).getTime()
-      defensePossessionTime += (end - start) / 1000 // in seconds
+      defensePossessionTime += (end - start) / 1000 
     }
   })
 

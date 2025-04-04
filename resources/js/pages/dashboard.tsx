@@ -6,7 +6,7 @@ import Navbar from '@/components/navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { Game, Stat } from '@/types/index';
+import { Game, Stat, Player, Action } from '@/types/index';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowRight, CalendarDays, ClipboardList, Clock, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -16,17 +16,44 @@ interface DashboardProps {
     stats: Stat;
 }
 
-export default function Dashboard({ nextGame, stats }: DashboardProps) {
-    // State variables for teams and players
+export default function Dashboard({ nextGame, stats:propStats }: DashboardProps) {
+    const [dashboardStats, setDashboardStats] = useState(propStats)
     const [teams, setTeams] = useState([]);
     const [players, setPlayers] = useState([]);
     const [games, setGames] = useState<Game[]>([]);
     const [selectedTeamId, setSelectedTeamId] = useState(null);
-    const [gameStats, setGameStats] = useState(null);
+    const [gameStats, setGameStats] = useState<{ game?: Game; stats?: Stat[]; events?: Event[]; players?: Player[]; actions?: Action[] } | null>(null);
     const [loading, setLoading] = useState(true);
     
 
-    // Function to update teams
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (propStats) {
+        setDashboardStats(propStats)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const response = await fetch("/api/dashboard/stats")
+
+        if (!response.ok) {
+          throw new Error(`Error fetching stats: ${response.status}`)
+        }
+
+        const data = await response.json()
+        setDashboardStats(data)
+      } catch (err) {
+        console.error("Failed to fetch stats:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [propStats])
+    
     const updateTeams = async () => {
         try {
             const response = await fetch('api/teams', {
@@ -44,7 +71,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
         }
     };
 
-    // Function to update players
+ 
     const updatePlayers = async () => {
         try {
             const response = await fetch('api/players', {
@@ -74,7 +101,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
 
             const data = await response.json();
 
-            //Filtrar apenas os próximos jogos
+       
             const upcomingGames = data
                 .filter((game: Game) => new Date(game.date) > new Date())
                 .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -91,7 +118,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
         updateGames();
     }, []);
 
-    // Format date for display
+
     const formatDate = (dateString: string) => {
         if (!dateString) return 'No date available';
         const options: Intl.DateTimeFormatOptions = {
@@ -103,23 +130,23 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
         return new Date(dateString).toLocaleDateString(undefined, options);
     };
 
-    // Calculate days until the game
+   
     const getDaysUntilGame = (dateString: string) => {
         if (!dateString) return 0;
         const gameDate = new Date(dateString);
         const today = new Date();
-        today.setHours(0, 0, 0, 0); //ignora horas, considerar apenas data
+        today.setHours(0, 0, 0, 0); 
         const diffTime = gameDate.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays > 0 ? diffDays : 0;
     };
 
-    // Only calculate if nextGame exists
+   
     nextGame = games.length > 0 ? games[0] : null;
     const daysUntilGame = nextGame ? getDaysUntilGame(nextGame.date) : 0;
 
     useEffect(() => {
-        // Fetch stats from your API
+       
         const fetchStats = async () => {
             try {
                 setLoading(true);
@@ -127,7 +154,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                 const data = await response.json();
                 setGameStats(data);
 
-                // Also fetch game-specific data for the coach stats card
+                
                 const gameResponse = await fetch('/api/games/latest/stats');
                 const gameData = await gameResponse.json();
                 setGameStats(gameData);
@@ -289,8 +316,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                     {/* Stats Overview */}
                     <div className="grid gap-6">
                         <GameStatsVisualizations
-                            stats={
-                                gameStats?.stats}
+                            stats={dashboardStats}
                         />
                     </div>
                 </div>

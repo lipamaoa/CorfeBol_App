@@ -1,4 +1,3 @@
-"use client"
 
 import type * as React from "react"
 import { Tooltip, type TooltipProps } from "recharts"
@@ -47,12 +46,39 @@ export function ChartContainer({ config, className, children, ...props }: ChartC
   )
 }
 
+// List of all Recharts tooltip props that should not be passed to DOM elements
+const RECHARTS_TOOLTIP_PROPS = [
+  "isAnimationActive",
+  "accessibilityLayer",
+  "allowEscapeViewBox",
+  "animationDuration",
+  "animationEasing",
+  "contentStyle",
+  "cursor",
+  "cursorStyle",
+  "filterNull",
+  "itemStyle",
+  "labelStyle",
+  "reverseDirection",
+  "useTranslate3d",
+  "wrapperStyle",
+  "position",
+  "coordinate",
+  "viewBox",
+  "offset",
+  "itemSorter",
+  "trigger",
+  "payloadUniqBy",
+]
+
 interface ChartTooltipContentProps extends React.HTMLAttributes<HTMLDivElement> {
   active?: boolean
   payload?: any[]
   label?: string
   formatter?: (value: any, name: string, props: any) => React.ReactNode
   labelFormatter?: (label: any, payload: any[]) => React.ReactNode
+  // Add all possible Recharts tooltip props
+  [key: string]: any
 }
 
 export function ChartTooltipContent({
@@ -68,8 +94,11 @@ export function ChartTooltipContent({
     return null
   }
 
+  // Filter out Recharts-specific props
+  const domProps = Object.fromEntries(Object.entries(props).filter(([key]) => !RECHARTS_TOOLTIP_PROPS.includes(key)))
+
   return (
-    <div className={cn("rounded-lg border bg-background p-2 shadow-sm", className)} {...props}>
+    <div className={cn("rounded-lg border bg-background p-2 shadow-sm", className)} {...domProps}>
       <div className="grid gap-2">
         {label && (
           <div className="text-xs text-muted-foreground">{labelFormatter ? labelFormatter(label, payload) : label}</div>
