@@ -71,7 +71,7 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
 
     fetchStats()
   }, [propStats])
-    
+
     const updateTeams = async () => {
         try {
             const response = await fetch('api/teams', {
@@ -89,7 +89,7 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
         }
     };
 
- 
+
     const updatePlayers = async () => {
         try {
             const response = await fetch('api/players', {
@@ -119,7 +119,7 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
 
             const data = await response.json();
 
-       
+
             const upcomingGames = data
                 .filter((game: Game) => new Date(game.date) > new Date())
                 .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -149,23 +149,23 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
         return new Date(dateString).toLocaleDateString(undefined, options);
     };
 
-   
+
     const getDaysUntilGame = (dateString: string) => {
         if (!dateString) return 0;
         const gameDate = new Date(dateString);
         const today = new Date();
-        today.setHours(0, 0, 0, 0); 
+        today.setHours(0, 0, 0, 0);
         const diffTime = gameDate.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays > 0 ? diffDays : 0;
     };
 
-   
+
     nextGame = games.length > 0 ? games[0] : null;
     const daysUntilGame = nextGame ? getDaysUntilGame(nextGame.date) : 0;
 
     useEffect(() => {
-       
+
         const fetchStats = async () => {
             try {
                 setLoading(true);
@@ -326,7 +326,7 @@ export default function Dashboard({ nextGame, stats:propStats }: DashboardProps)
                         />
                         <StatsCard
                             gameId={games[games.length - 1]?.id}
-                            stats={gameStats}
+                            stats={gameStats?.stats}
                             events={events}
                             players={players}
                         />
