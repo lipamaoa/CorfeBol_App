@@ -97,7 +97,6 @@ class PlayerAPIController extends Controller
     {
         $player = Player::findOrFail($id);
 
-        // Apagamos foto
         if ($player->photo)
             Storage::delete($player->photo);
 

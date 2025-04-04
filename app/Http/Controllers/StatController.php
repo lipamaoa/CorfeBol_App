@@ -50,7 +50,7 @@ class StatController extends Controller
              }
          }
          
-         // Create the stat
+        
          $stat = Stat::create([
              'game_id' => $request->input('game_id'),
              'player_id' => $request->input('player_id'),
@@ -126,7 +126,7 @@ class StatController extends Controller
      */
     public function getGameStats($gameId)
     {
-        // Get the game
+       
         $game = Game::find($gameId);
         
         if (!$game) {
@@ -136,17 +136,16 @@ class StatController extends Controller
             ]);
         }
         
-        // Get stats for this game
+       
         $stats = Stat::where('game_id', $game->id)
                     ->orderBy('created_at', 'desc')
                     ->get();
         
-        // Get events for this game
+        
         $events = Event::where('game_id', $game->id)
                     ->orderBy('created_at', 'desc')
                     ->get();
-        
-        // Get players involved in this game
+      
         $playerIds = Stat::where('game_id', $game->id)
                         ->whereNotNull('player_id')
                         ->pluck('player_id')
@@ -154,7 +153,7 @@ class StatController extends Controller
         
         $players = Player::whereIn('id', $playerIds)->get();
         
-        // Get all actions
+        
         $actions = Action::all();
         
         return response()->json([
@@ -173,7 +172,7 @@ class StatController extends Controller
      */
     public function getLatestGameStats()
     {
-        // Get the latest game
+        
         $game = Game::orderBy('date', 'desc')->first();
         
         if (!$game) {
@@ -183,17 +182,17 @@ class StatController extends Controller
             ]);
         }
         
-        // Get stats for this game
+    
         $stats = Stat::where('game_id', $game->id)
                     ->orderBy('created_at', 'desc')
                     ->get();
         
-        // Get events for this game
+       
         $events = Event::where('game_id', $game->id)
                     ->orderBy('created_at', 'desc')
                     ->get();
         
-        // Get players involved in this game
+       
         $playerIds = Stat::where('game_id', $game->id)
                         ->whereNotNull('player_id')
                         ->pluck('player_id')
@@ -201,7 +200,7 @@ class StatController extends Controller
         
         $players = Player::whereIn('id', $playerIds)->get();
         
-        // Get all actions
+     
         $actions = Action::all();
         
         return response()->json([
