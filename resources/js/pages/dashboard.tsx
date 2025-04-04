@@ -226,7 +226,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                                                 {/* Action buttons in a row */}
                                                 <div className="mt-3 flex items-center justify-center gap-3">
                                                     <Button asChild size="sm">
-                                                        <Link href={`/games/${nextGame?.id}/record?game=`} className="flex items-center gap-1.5">
+                                                        <Link href={`/games/${nextGame?.id}/record`} className="flex items-center gap-1.5">
                                                             <ClipboardList className="h-3.5 w-3.5" />
                                                             Record Game
                                                         </Link>
