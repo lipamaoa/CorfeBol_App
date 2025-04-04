@@ -22,9 +22,27 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
     const [players, setPlayers] = useState([]);
     const [games, setGames] = useState<Game[]>([]);
     const [selectedTeamId, setSelectedTeamId] = useState(null);
-    const [gameStats, setGameStats] = useState(null);
+    const [gameStats, setGameStats] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+    const [events, setEvents] = useState([]);
+
+        // Function to update teams
+    const updateEvents = async () => {
+        try {
+            const response = await fetch('api/events', {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error('Error events Server: ' + response.status);
+            }
+
+            const eventsData = await response.json();
+            setEvents(eventsData);
+        } catch (error) {
+            console.error('Error fetching events:', error);
+        }
+    };
 
     // Function to update teams
     const updateTeams = async () => {
@@ -89,6 +107,7 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
         updateTeams();
         updatePlayers();
         updateGames();
+        updateEvents();
     }, []);
 
     // Format date for display
@@ -126,11 +145,12 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                 const response = await fetch('/api/stats');
                 const data = await response.json();
                 setGameStats(data);
-
+                console.log('Game Stats:', data);
                 // Also fetch game-specific data for the coach stats card
-                const gameResponse = await fetch('/api/games/latest/stats');
-                const gameData = await gameResponse.json();
-                setGameStats(gameData);
+                // const gameResponse = await fetch('/api/games/latest/stats');
+                // const gameData = await gameResponse.json();
+                // setGameStats(gameData);
+                // console.log('Game Stats:', gameData);
             } catch (error) {
                 console.error('Failed to fetch stats:', error);
             } finally {
@@ -278,11 +298,10 @@ export default function Dashboard({ nextGame, stats }: DashboardProps) {
                             onClearTeamFilter={() => setSelectedTeamId(null)}
                         />
                         <StatsCard
-                            gameId={gameStats?.game?.id}
-                            stats={gameStats?.stats}
-                            events={gameStats?.events}
-                            players={gameStats?.players}
-                            actions={gameStats?.actions}
+                            gameId={games[games.length - 1]?.id}
+                            stats={gameStats}
+                            events={events}
+                            players={players}
                         />
                     </div>
 
