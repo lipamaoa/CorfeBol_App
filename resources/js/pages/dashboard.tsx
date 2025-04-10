@@ -120,12 +120,6 @@ export default function Dashboard({ nextGame, stats: propStats }: DashboardProps
 
             const data = await response.json();
 
-
-                // const upcomingGames = data
-                //     .filter((game: Game) => new Date(game.date) > new Date())
-                //     .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-            console.log('Upcoming Games:', data);
             setGames(data);
         } catch (error) {
             console.error(error);

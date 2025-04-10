@@ -617,8 +617,7 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
             if (!currentPhaseEvent) {
                 alert('No active event found. Please start an attack or defense event first.');
                 setEventDialogOpen(false);
-                return;
-            }
+                return;} 
 
             const isSuccess = success !== undefined ? success : eventSuccess;
 
@@ -642,7 +641,34 @@ const RecordGame = ({ game, players: initialPlayers, stats: initialStats, action
                 };
 
                 await recordEvent(eventData);
-            } else {
+            } 
+
+          
+            else if (action.code === 'D' && !isSuccess) {
+                // Incrementar o placar do adversário para defesa falhada
+                setOpponentScore((prev) => {
+                    const newScore = prev + 1;
+                    localStorage.setItem(`game_${game?.id}_opponent_score`, newScore.toString());
+                    return newScore;
+                });
+                
+                // Resto do código para registrar o evento...
+                const description = eventDescription || 
+                    `${selectedPlayer.name} - ${action.description || 'Defense'} (Failed) - Goal conceded`;
+                
+                const eventData: Stat = {
+                    game_id: game?.id ?? 0,
+                    player_id: selectedPlayer.id,
+                    action_id: actionId,
+                    success: isSuccess,
+                    event_id: currentPhaseEvent.id,
+                    description,
+                    time: formatTime(matchTime),
+                };
+    
+                await recordEvent(eventData);
+            
+            }else {
                 const description =
                 eventDescription || `${selectedPlayer.name} - ${action.description || 'Action'} ${isSuccess ? '(Scored)' : '(Missed)'}`;
             
