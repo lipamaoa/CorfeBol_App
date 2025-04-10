@@ -120,12 +120,7 @@ export default function Dashboard({ nextGame, stats: propStats }: DashboardProps
 
             const data = await response.json();
 
-
-            const upcomingGames = data
-                .filter((game: Game) => new Date(game.date) > new Date())
-                .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-            setGames(upcomingGames);
+            setGames(data);
         } catch (error) {
             console.error(error);
         }
@@ -193,7 +188,9 @@ export default function Dashboard({ nextGame, stats: propStats }: DashboardProps
         <>
             <Navbar />
             <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/dashboard' }]}>
-                <Head title="Dashboard" />
+                <Head title="Dashboard" >
+                <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+                </Head>
 
                 {/* Next Game Card */}
                 <div className="space-y-6">
@@ -326,7 +323,7 @@ export default function Dashboard({ nextGame, stats: propStats }: DashboardProps
                             onClearTeamFilter={() => setSelectedTeamId(null)}
                         />
                         <StatsCard
-                            gameId={games[games.length - 1]?.id}
+                            gameId={games[games.length-1]?.id}
                             stats={gameStat}
                             events={events}
                             players={players}

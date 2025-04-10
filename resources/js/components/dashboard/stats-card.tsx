@@ -407,7 +407,26 @@ function formatTime(seconds: number): string {
 }
 
 function timeStringToSeconds(timeString) {
-    const [hours, minutes, seconds] = timeString.split(':').map(Number);
+    // Usar regex para extrair horas, minutos, segundos e AM/PM
+    const match = timeString.match(/(\d+):(\d+):(\d+)\s*(AM|PM)?/i);
+    
+    if (!match) {
+        console.error("Erro: Formato de tempo inválido:", timeString);
+        return 0;
+    }
+    
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const seconds = parseInt(match[3], 10);
+    const period = match[4] ? match[4].toUpperCase() : null;
+    
+    // Ajustar para formato 24 horas
+    if (period === 'PM' && hours < 12) {
+        hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+        hours = 0;
+    }
+    
     return hours * 3600 + minutes * 60 + seconds;
 }
 
